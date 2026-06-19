@@ -31,7 +31,7 @@
   <div class="rf-scrim" id="rfPay"><div class="rf-modal">
     <h2>You're out of <em>free runs</em>.</h2>
     <p>You've used today's free runs. Go unlimited for full access to fit analysis, ATS resumes, prep plans, mock interviews, and recruiter ranking.</p>
-    <div class="rf-price">$9<small> / month</small></div>
+    <div class="rf-price">$4.99<small> / month</small></div>
     <a class="rf-cta" id="rfUpgrade" href="#">Go unlimited</a>
     <button class="rf-x" id="rfPayClose">Maybe later</button>
     <button class="rf-x" id="rfPayCode">Already a member? Use your code</button>
