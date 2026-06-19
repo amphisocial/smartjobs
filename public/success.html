@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>You're in — RoleFit</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<style>
+  :root{--bg:#F5F6F8;--ink:#0F172A;--muted:#64748B;--line:#E5E8EC;--accent:#4F46E5}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:Inter,system-ui,sans-serif;background:var(--bg);color:var(--ink);min-height:100dvh;display:flex;align-items:center;justify-content:center;padding:24px}
+  .box{background:#fff;border:1px solid var(--line);border-radius:18px;max-width:440px;width:100%;padding:34px;text-align:center}
+  .logo{font-weight:800;font-size:18px;margin-bottom:18px}.logo b{color:var(--accent)}
+  h1{font-size:28px;font-weight:800;letter-spacing:-.02em}h1 em{font-style:normal;color:var(--accent)}
+  p{margin-top:12px;color:var(--muted);font-size:15px;line-height:1.5}
+  .spin{width:22px;height:22px;margin:22px auto 0;border:2px solid var(--line);border-top-color:var(--accent);border-radius:50%;animation:s .7s linear infinite}@keyframes s{to{transform:rotate(360deg)}}
+  .codelabel{margin-top:20px;font-size:13px;color:var(--muted)}
+  .box-code{margin-top:9px;background:#F8FAFC;border:1px solid var(--line);border-radius:10px;padding:13px;font-family:ui-monospace,Menlo,monospace;font-size:12.5px;word-break:break-all}
+  .copy{margin-top:10px;background:#fff;border:1px solid var(--line);padding:10px 16px;border-radius:10px;font-weight:600;font-size:14px;cursor:pointer;font-family:inherit}
+  a.cta{display:inline-block;margin-top:22px;background:var(--accent);color:#fff;text-decoration:none;padding:13px 24px;border-radius:12px;font-weight:700}
+  .err{color:#DC2626}
+</style>
+</head>
+<body>
+  <div class="box">
+    <div class="logo">Role<b>Fit</b></div>
+    <div id="c"><h1>Setting you <em>up…</em></h1><div class="spin"></div></div>
+  </div>
+<script>
+  const TOK="rf_token", c=document.getElementById("c");
+  const sid=new URLSearchParams(location.search).get("session_id");
+  (async()=>{
+    if(!sid)return fail("Missing checkout reference.");
+    try{
+      const r=await fetch("/api/claim?session_id="+encodeURIComponent(sid)); const d=await r.json();
+      if(!r.ok||!d.token)return fail(d.error||"We couldn't confirm your subscription.");
+      localStorage.setItem(TOK,d.token);
+      c.innerHTML='<h1>You\'re <em>unlimited.</em></h1><p>Membership saved to this browser. Full access to every tool.</p>'+
+        '<p class="codelabel">Your member code — save it to unlock other devices:</p>'+
+        '<div class="box-code" id="mc">'+d.token+'</div><button class="copy" id="cp">Copy code</button><br>'+
+        '<a class="cta" href="/candidate.html">Start using RoleFit</a>';
+      document.getElementById("cp").onclick=async()=>{try{await navigator.clipboard.writeText(d.token);document.getElementById("cp").textContent="Copied ✓";}catch(_){}}
+    }catch(_){fail("Something went wrong confirming your subscription.");}
+  })();
+  function fail(m){c.innerHTML='<h1>Hmm.</h1><p class="err">'+m+'</p><p>If you were charged, contact support with your email.</p><a class="cta" href="/">Back to RoleFit</a>';}
+</script>
+</body>
+</html>

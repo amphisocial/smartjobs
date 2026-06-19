@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>RoleFit — for recruiters</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<style>
+  :root{--bg:#F5F6F8;--card:#fff;--ink:#0F172A;--muted:#64748B;--line:#E5E8EC;--accent:#0EA5A4;--accent-d:#0B8281;--ind:#4F46E5;--ok:#059669;--warn:#D97706;--bad:#DC2626}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:"Inter",system-ui,sans-serif;background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased}
+  .wrap{max-width:920px;margin:0 auto;padding:0 20px 80px}
+  header{display:flex;align-items:center;justify-content:space-between;padding:18px 0}
+  .logo{font-weight:800;font-size:19px;letter-spacing:-.02em;text-decoration:none;color:var(--ink)}
+  .logo b{color:var(--ind)}
+  .back{font-size:13px;color:var(--muted);text-decoration:none}
+  h1.page{font-size:24px;font-weight:800;letter-spacing:-.02em;margin:8px 0 4px}
+  .sub{color:var(--muted);font-size:14px;margin-bottom:18px}
+  .panel{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:14px}
+  label.fld{font-weight:600;font-size:13px;display:block;margin-bottom:8px}
+  textarea{width:100%;min-height:120px;resize:vertical;border:1px solid var(--line);border-radius:10px;padding:11px;font-family:inherit;font-size:13.5px;line-height:1.5;outline:none}
+  textarea:focus,input:focus{border-color:var(--accent)}
+  input.name{width:100%;border:1px solid var(--line);border-radius:9px;padding:9px 11px;font-family:inherit;font-size:13.5px;margin-bottom:8px;outline:none}
+  .cand{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:10px;position:relative}
+  .cand .rm{position:absolute;top:10px;right:10px;background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px}
+  .cand textarea{min-height:90px}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  .add{background:#fff;border:1px dashed var(--accent);color:var(--accent-d);padding:10px 14px;border-radius:10px;font-weight:600;font-size:13.5px;cursor:pointer}
+  .run{background:var(--accent);color:#fff;border:none;padding:12px 22px;border-radius:10px;font-weight:700;font-size:14px;cursor:pointer}
+  .run:disabled{opacity:.5;cursor:default}
+  .loading{display:none;align-items:center;gap:10px;color:var(--muted);font-size:14px;margin-top:14px}
+  .loading.on{display:flex}
+  .spin{width:16px;height:16px;border:2px solid var(--line);border-top-color:var(--accent);border-radius:50%;animation:s .7s linear infinite}
+  @keyframes s{to{transform:rotate(360deg)}}
+  .err{color:var(--bad);font-size:13.5px;margin-top:10px}
+  .ranked{margin-top:18px;display:none}
+  .ranked.on{display:block}
+  .rc{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:12px}
+  .rc .top{display:flex;align-items:center;justify-content:space-between;gap:10px}
+  .rc .nm{font-weight:700;font-size:16px}
+  .rc .sc{font-weight:800;font-size:22px;letter-spacing:-.02em}
+  .pill{display:inline-block;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;margin-left:8px}
+  .pill.call{background:#ECFDF5;color:#047857}
+  .pill.maybe{background:#FFFBEB;color:#B45309}
+  .pill.pass{background:#FEF2F2;color:#B91C1C}
+  .rc .one{color:var(--muted);font-size:13.5px;margin-top:6px}
+  h3.sec{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:12px 0 6px}
+  ul.list{list-style:none;display:flex;flex-direction:column;gap:6px}
+  ul.list li{font-size:13.5px;line-height:1.45;padding-left:16px;position:relative}
+  ul.list li::before{content:"";position:absolute;left:0;top:6px;width:6px;height:6px;border-radius:2px;background:var(--accent)}
+  .twocol{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  @media(max-width:640px){.twocol{grid-template-columns:1fr}}
+  .tp{background:#F0FDFA;border:1px solid #CCFBF1;border-radius:10px;padding:14px;margin-top:12px;display:none}
+  .tp.on{display:block}
+  .tpbtn{background:#fff;border:1px solid var(--accent);color:var(--accent-d);padding:8px 12px;border-radius:9px;font-weight:600;font-size:13px;cursor:pointer;margin-top:10px}
+  .muted{color:var(--muted);font-size:13px;line-height:1.5}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <a class="logo" href="/">Role<b>Fit</b></a>
+      <div style="display:flex;gap:14px;align-items:center">
+        <span id="rfCredits" class="sub" style="margin:0;font-size:12px"></span>
+        <a href="#" id="rfMember" class="back">Member code</a>
+        <a class="back" href="/">← all tools</a>
+      </div>
+    </header>
+
+    <h1 class="page">Recruiter toolkit</h1>
+    <div class="sub">Paste the role, add candidate resumes, and get a ranked shortlist with screening points.</div>
+
+    <div class="panel">
+      <label class="fld">Job description</label>
+      <textarea id="jd" placeholder="Paste the role's job description…"></textarea>
+    </div>
+
+    <div id="cands"></div>
+    <div class="row" style="margin-bottom:16px">
+      <button class="add" id="addCand">+ Add candidate</button>
+      <span class="muted" id="cnt"></span>
+    </div>
+
+    <button class="run" id="rankBtn">Rank candidates</button>
+    <div class="loading" id="loading"><div class="spin"></div><span id="loadTxt">Reviewing candidates…</span></div>
+    <div class="err" id="err"></div>
+
+    <div class="ranked" id="ranked"></div>
+  </div>
+
+<script src="/app-billing.js"></script>
+<script>
+  const $=(id)=>document.getElementById(id);
+  const candsEl=$("cands");
+  let seq=0;
+  function esc(s){return String(s==null?"":s).replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));}
+
+  function addCand(name=""){
+    const id="c"+(++seq);
+    const div=document.createElement("div");
+    div.className="cand"; div.dataset.id=id;
+    div.innerHTML=`<button class="rm" title="remove">✕</button>
+      <input class="name" placeholder="Candidate name (optional)" value="${esc(name)}"/>
+      <textarea placeholder="Paste this candidate's resume text…"></textarea>`;
+    div.querySelector(".rm").addEventListener("click",()=>{div.remove();updateCount();});
+    candsEl.appendChild(div); updateCount();
+  }
+  function updateCount(){ $("cnt").textContent=candsEl.children.length+" candidate"+(candsEl.children.length===1?"":"s"); }
+  $("addCand").addEventListener("click",()=>addCand());
+  addCand(); addCand(); // start with two
+
+  function collect(){
+    return [...candsEl.children].map((d,i)=>({
+      id:d.dataset.id,
+      name:d.querySelector(".name").value.trim()||("Candidate "+(i+1)),
+      resume:d.querySelector("textarea").value.trim()
+    })).filter(c=>c.resume);
+  }
+
+  async function post(url,body){ return window.RF.post(url,body); }
+
+  $("rankBtn").addEventListener("click",async()=>{
+    const jd=$("jd").value.trim(); const candidates=collect();
+    if(!jd){ $("err").textContent="Paste the job description first."; return; }
+    if(!candidates.length){ $("err").textContent="Add at least one candidate resume."; return; }
+    $("err").textContent=""; $("rankBtn").disabled=true; $("loading").classList.add("on"); $("ranked").classList.remove("on");
+    try{
+      const d=await post("/api/hr/rank",{jd,candidates});
+      renderRanked(jd,candidates,d.ranked||[]);
+    }catch(e){ $("err").textContent=e.message; }
+    finally{ $("rankBtn").disabled=false; $("loading").classList.remove("on"); }
+  });
+
+  function renderRanked(jd,candidates,ranked){
+    const byId=Object.fromEntries(candidates.map(c=>[c.id,c]));
+    const ranks=$("ranked"); ranks.innerHTML=""; ranks.classList.add("on");
+    ranked.forEach(r=>{
+      const rec=(r.recommendation||"maybe").toLowerCase();
+      const li=a=>(a||[]).map(x=>`<li>${esc(x)}</li>`).join("");
+      const div=document.createElement("div"); div.className="rc";
+      div.innerHTML=`<div class="top">
+          <div><span class="nm">${esc(r.name)}</span><span class="pill ${rec}">${esc(rec)}</span></div>
+          <div class="sc">${Math.round(r.score)}</div>
+        </div>
+        <div class="one">${esc(r.oneLine||"")}</div>
+        <div class="twocol">
+          <div><h3 class="sec">Strengths</h3><ul class="list">${li(r.strengths)}</ul></div>
+          <div><h3 class="sec">Concerns</h3><ul class="list">${li(r.concerns)}</ul></div>
+        </div>
+        <button class="tpbtn">📞 Screening talking points</button>
+        <div class="tp"></div>`;
+      const btn=div.querySelector(".tpbtn"), tp=div.querySelector(".tp");
+      btn.addEventListener("click",async()=>{
+        if(tp.classList.contains("on")){tp.classList.remove("on");return;}
+        const cand=byId[r.id]||{name:r.name,resume:""};
+        btn.textContent="Loading…"; btn.disabled=true;
+        try{
+          const d=await post("/api/hr/talking-points",{jd,candidate:cand});
+          tp.innerHTML=`<div class="muted"><b>Opener:</b> ${esc(d.suggestedOpener||"")}</div>
+            <h3 class="sec">Screening questions</h3><ul class="list">${li(d.screeningQuestions)}</ul>
+            <div class="twocol">
+              <div><h3 class="sec">Confirm</h3><ul class="list">${li(d.strengthsToConfirm)}</ul></div>
+              <div><h3 class="sec">Probe</h3><ul class="list">${li(d.probe)}</ul></div>
+            </div>
+            ${(d.redFlags||[]).length?`<h3 class="sec">Address</h3><ul class="list">${li(d.redFlags)}</ul>`:""}`;
+          tp.classList.add("on");
+        }catch(e){ tp.innerHTML=`<div class="err">${esc(e.message)}</div>`; tp.classList.add("on"); }
+        btn.textContent="📞 Screening talking points"; btn.disabled=false;
+      });
+      ranks.appendChild(div);
+    });
+    if(!ranked.length) ranks.innerHTML='<div class="muted">No ranking returned. Try again.</div>';
+    ranks.scrollIntoView({behavior:"smooth",block:"start"});
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>RoleFit — for job seekers</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<style>
+  :root{--bg:#F5F6F8;--card:#fff;--ink:#0F172A;--muted:#64748B;--line:#E5E8EC;--accent:#4F46E5;--accent2:#0EA5A4;--ok:#059669;--warn:#D97706;--bad:#DC2626;--soft:#EEF0FE}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:"Inter",system-ui,sans-serif;background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased}
+  .wrap{max-width:920px;margin:0 auto;padding:0 20px 80px}
+  header{display:flex;align-items:center;justify-content:space-between;padding:18px 0}
+  .logo{font-weight:800;font-size:19px;letter-spacing:-.02em;text-decoration:none;color:var(--ink)}
+  .logo b{color:var(--accent)}
+  .back{font-size:13px;color:var(--muted);text-decoration:none}
+  h1.page{font-size:24px;font-weight:800;letter-spacing:-.02em;margin:8px 0 4px}
+  .sub{color:var(--muted);font-size:14px;margin-bottom:18px}
+
+  .inputs{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:680px){.inputs{grid-template-columns:1fr}}
+  .panel{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px}
+  .panel .ph{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+  .panel .ph label{font-weight:600;font-size:13px}
+  .uploadbtn{font-size:12px;color:var(--accent);background:var(--soft);border:none;padding:6px 10px;border-radius:8px;cursor:pointer;font-weight:600}
+  textarea{width:100%;min-height:150px;resize:vertical;border:1px solid var(--line);border-radius:10px;padding:11px;font-family:inherit;font-size:13.5px;line-height:1.5;color:var(--ink);outline:none}
+  textarea:focus{border-color:var(--accent)}
+  input[type=file]{display:none}
+
+  .tabs{display:flex;gap:8px;margin:20px 0 16px;flex-wrap:wrap}
+  .tab{background:var(--card);border:1px solid var(--line);color:var(--ink);padding:10px 14px;border-radius:10px;font-weight:600;font-size:13.5px;cursor:pointer;transition:all .12s}
+  .tab.on{background:var(--accent);border-color:var(--accent);color:#fff}
+  .tab:hover:not(.on){border-color:var(--accent)}
+
+  .run{background:var(--accent);color:#fff;border:none;padding:12px 20px;border-radius:10px;font-weight:700;font-size:14px;cursor:pointer}
+  .run:disabled{opacity:.5;cursor:default}
+  .panelfull{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;margin-top:8px}
+  .loading{display:none;align-items:center;gap:10px;color:var(--muted);font-size:14px;margin-top:14px}
+  .loading.on{display:flex}
+  .spin{width:16px;height:16px;border:2px solid var(--line);border-top-color:var(--accent);border-radius:50%;animation:s .7s linear infinite}
+  @keyframes s{to{transform:rotate(360deg)}}
+  .err{color:var(--bad);font-size:13.5px;margin-top:10px}
+
+  .result{display:none;margin-top:8px}
+  .result.on{display:block}
+  h3.sec{font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:16px 0 8px}
+  .scorebig{font-size:46px;font-weight:800;letter-spacing:-.03em}
+  .scorebig small{font-size:18px;color:var(--muted);font-weight:600}
+  .verdict{font-size:16px;font-weight:600;margin-top:2px}
+  .chips{display:flex;flex-wrap:wrap;gap:7px}
+  .chip{font-size:12.5px;padding:5px 10px;border-radius:20px;font-weight:500}
+  .chip.ok{background:#ECFDF5;color:#047857}
+  .chip.miss{background:#FEF2F2;color:#B91C1C}
+  ul.list{list-style:none;display:flex;flex-direction:column;gap:7px}
+  ul.list li{font-size:14px;line-height:1.5;padding-left:18px;position:relative}
+  ul.list li::before{content:"";position:absolute;left:0;top:7px;width:7px;height:7px;border-radius:2px;background:var(--accent)}
+  .twocol{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+  @media(max-width:640px){.twocol{grid-template-columns:1fr}}
+  .muted{color:var(--muted);font-size:13px;line-height:1.5}
+
+  /* ATS preview */
+  .resumecard{border:1px solid var(--line);border-radius:10px;padding:18px;background:#fff;font-size:13px;line-height:1.5}
+  .resumecard h4{font-size:16px;margin-bottom:3px}
+  .resumecard .rh{text-transform:uppercase;font-size:11px;letter-spacing:.08em;color:var(--muted);border-bottom:1px solid var(--line);margin:12px 0 6px;padding-bottom:3px;font-weight:700}
+  .dl{background:var(--ok);color:#fff;border:none;padding:11px 18px;border-radius:10px;font-weight:700;font-size:14px;cursor:pointer;margin-top:14px}
+
+  /* interview */
+  .qbox{background:var(--soft);border:1px solid #DDE0FB;border-radius:12px;padding:16px;margin-top:8px}
+  .qmeta{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--accent);font-weight:700}
+  .qtext{font-size:16px;font-weight:600;margin-top:6px;line-height:1.4}
+  .fb{border-left:3px solid var(--accent);padding:10px 14px;background:#fff;border-radius:0 10px 10px 0;margin-top:12px}
+  .fbscore{font-weight:800;font-size:15px}
+  .pill{display:inline-block;font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px}
+  .pill.call{background:#ECFDF5;color:#047857}
+  .pill.maybe{background:#FFFBEB;color:#B45309}
+  .pill.pass{background:#FEF2F2;color:#B91C1C}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <a class="logo" href="/">Role<b>Fit</b></a>
+      <div style="display:flex;gap:14px;align-items:center">
+        <span id="rfCredits" class="sub" style="margin:0;font-size:12px"></span>
+        <a class="back" href="/tracker.html" style="color:var(--accent);font-weight:600">⊞ Job tracker</a>
+        <a href="#" id="rfMember" class="back">Member code</a>
+        <a class="back" href="/">← all tools</a>
+      </div>
+    </header>
+
+    <h1 class="page">Job-seeker toolkit</h1>
+    <div class="sub">Paste the job description and your resume once — then run any tool below.</div>
+
+    <div class="inputs">
+      <div class="panel">
+        <div class="ph"><label>Job description</label>
+          <button class="uploadbtn" id="jdUp">📷 screenshot</button>
+          <input type="file" id="jdFile" accept="image/*" />
+        </div>
+        <textarea id="jd" placeholder="Paste the full job description here…"></textarea>
+      </div>
+      <div class="panel">
+        <div class="ph"><label>Your resume</label>
+          <button class="uploadbtn" id="cvUp">📷 screenshot</button>
+          <input type="file" id="cvFile" accept="image/*" />
+        </div>
+        <textarea id="cv" placeholder="Paste your current resume text here…"></textarea>
+      </div>
+    </div>
+
+    <div class="tabs" id="tabs">
+      <button class="tab on" data-t="fit">Fit analysis</button>
+      <button class="tab" data-t="ats">ATS resume</button>
+      <button class="tab" data-t="prep">Prep plan</button>
+      <button class="tab" data-t="interview">Mock interview</button>
+    </div>
+
+    <div id="stageWrap" style="display:none;margin-bottom:14px">
+      <label style="font-size:13px;font-weight:600;display:block;margin-bottom:6px">Who's interviewing you?</label>
+      <select id="stageSel" style="border:1px solid var(--line);border-radius:10px;padding:11px;font-family:inherit;font-size:14px;background:#fff;color:var(--ink);outline:none;min-width:240px">
+        <option value="general">General practice</option>
+        <option value="recruiter">Recruiter screen</option>
+        <option value="hiring_manager">Hiring manager</option>
+        <option value="technical">Technical round</option>
+        <option value="comp">Comp negotiation</option>
+      </select>
+    </div>
+
+    <button class="run" id="runBtn">Analyze fit</button>
+    <div class="loading" id="loading"><div class="spin"></div><span id="loadingTxt">Working…</span></div>
+    <div class="err" id="err"></div>
+
+    <div class="result" id="result"></div>
+  </div>
+
+<script src="/app-billing.js"></script>
+<script>
+  const $=(id)=>document.getElementById(id);
+  const jd=$("jd"), cv=$("cv"), result=$("result"), err=$("err"), loading=$("loading");
+  let tab="fit";
+  const TAB_LABEL={fit:"Analyze fit",ats:"Optimize resume",prep:"Build prep plan",interview:"Start mock interview"};
+
+  // tab switching
+  function selectTab(t){
+    [...$("tabs").children].forEach(x=>x.classList.toggle("on",x.dataset.t===t));
+    tab=t; $("runBtn").textContent=TAB_LABEL[tab];
+    $("stageWrap").style.display = (tab==="interview") ? "block" : "none";
+    result.classList.remove("on"); result.innerHTML=""; err.textContent="";
+  }
+  $("tabs").addEventListener("click",e=>{const b=e.target.closest(".tab");if(!b)return;selectTab(b.dataset.t);});
+
+  // screenshot OCR -> textarea
+  function wireUpload(btnId,fileId,target,kind){
+    $(btnId).addEventListener("click",()=>$(fileId).click());
+    $(fileId).addEventListener("change",async()=>{
+      const f=$(fileId).files[0]; if(!f)return;
+      const small=await downscale(f,1400,.9);
+      $(btnId).textContent="reading…";
+      try{
+        const r=await fetch("/api/extract",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({image:small,mime:"image/jpeg",kind})});
+        const d=await r.json(); if(d.text) target.value=d.text;
+      }catch(e){}
+      $(btnId).textContent="📷 screenshot";
+    });
+  }
+  function downscale(file,maxEdge,q){return new Promise(res=>{const img=new Image();img.onload=()=>{let{width:w,height:h}=img;const s=Math.min(1,maxEdge/Math.max(w,h));w=Math.round(w*s);h=Math.round(h*s);const c=document.createElement("canvas");c.width=w;c.height=h;c.getContext("2d").drawImage(img,0,0,w,h);res(c.toDataURL("image/jpeg",q));};img.src=URL.createObjectURL(file);});}
+  wireUpload("jdUp","jdFile",jd,"jd"); wireUpload("cvUp","cvFile",cv,"resume");
+
+  function needInputs(){ if(!jd.value.trim()||!cv.value.trim()){err.textContent="Paste both a job description and your resume first.";return false;} err.textContent=""; return true; }
+  function busy(on,txt){ $("runBtn").disabled=on; loading.classList.toggle("on",on); if(txt)$("loadingTxt").textContent=txt; }
+  async function post(url,body){ return window.RF.post(url,body); }
+  function esc(s){return String(s==null?"":s).replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));}
+
+  $("runBtn").addEventListener("click",async()=>{
+    if(tab==="interview"){ return startInterview(); }
+    if(!needInputs())return;
+    busy(true,"Analyzing…"); err.textContent=""; result.classList.remove("on");
+    try{
+      if(tab==="fit") renderFit(await post("/api/fit",{jd:jd.value,resume:cv.value}));
+      else if(tab==="ats") renderAts(await post("/api/ats",{jd:jd.value,resume:cv.value}));
+      else if(tab==="prep") renderPrep(await post("/api/training",{jd:jd.value,resume:cv.value}));
+    }catch(e){ err.textContent=e.message; }
+    finally{ busy(false); }
+  });
+
+  function show(html){ result.innerHTML=html; result.classList.add("on"); }
+
+  function renderFit(d){
+    const matched=(d.matchedKeywords||[]).map(k=>`<span class="chip ok">${esc(k)}</span>`).join("");
+    const missing=(d.missingKeywords||[]).map(k=>`<span class="chip miss">${esc(k)}</span>`).join("");
+    const li=a=>(a||[]).map(x=>`<li>${esc(x)}</li>`).join("");
+    show(`<div class="panelfull">
+      <div class="scorebig">${Math.round(d.score)}<small>/100 fit</small></div>
+      <div class="verdict">${esc(d.verdict||"")}</div>
+      <p class="muted" style="margin-top:8px">${esc(d.summary||"")}</p>
+      <h3 class="sec">Matched keywords</h3><div class="chips">${matched||'<span class="muted">—</span>'}</div>
+      <h3 class="sec">Missing keywords</h3><div class="chips">${missing||'<span class="muted">none — nice</span>'}</div>
+      <div class="twocol">
+        <div><h3 class="sec">Strengths</h3><ul class="list">${li(d.strengths)}</ul></div>
+        <div><h3 class="sec">Gaps / risks</h3><ul class="list">${li(d.gaps)}</ul></div>
+      </div>
+    </div>`);
+  }
+
+  let atsResumeData=null;
+  function renderAts(d){
+    atsResumeData=d.resume||{};
+    const r=atsResumeData;
+    const exp=(r.experience||[]).map(e=>`<div style="margin-top:8px"><b>${esc(e.title)}${e.company?" — "+esc(e.company):""}</b><div class="muted">${esc([e.location,e.dates].filter(Boolean).join(" | "))}</div><ul class="list" style="margin-top:5px">${(e.bullets||[]).map(b=>`<li>${esc(b)}</li>`).join("")}</ul></div>`).join("");
+    const edu=(r.education||[]).map(e=>`<div>${esc([e.degree,e.school,e.dates].filter(Boolean).join(" — "))}</div>`).join("");
+    const added=(d.keywordsAdded||[]).map(k=>`<span class="chip ok">${esc(k)}</span>`).join("");
+    const consider=(d.keywordsToConsider||[]).map(k=>`<span class="chip miss">${esc(k)}</span>`).join("");
+    show(`<div class="panelfull">
+      <div class="resumecard">
+        <h4>${esc(r.name||"Your name")}</h4>
+        <div class="muted">${esc([r.contact?.email,r.contact?.phone,r.contact?.location,...((r.contact?.links)||[])].filter(Boolean).join("  |  "))}</div>
+        ${r.summary?`<div class="rh">Summary</div><div>${esc(r.summary)}</div>`:""}
+        ${(r.skills||[]).length?`<div class="rh">Skills</div><div>${esc((r.skills||[]).join(" • "))}</div>`:""}
+        ${exp?`<div class="rh">Experience</div>${exp}`:""}
+        ${edu?`<div class="rh">Education</div>${edu}`:""}
+        ${(r.certifications||[]).length?`<div class="rh">Certifications</div><div>${esc((r.certifications||[]).join(" • "))}</div>`:""}
+      </div>
+      <button class="dl" id="dlPdf">⬇ Download ATS PDF</button>
+      ${added?`<h3 class="sec">Keywords now reflected (genuinely supported)</h3><div class="chips">${added}</div>`:""}
+      ${consider?`<h3 class="sec">Add these only if you truly have them</h3><div class="chips">${consider}</div>`:""}
+      ${(d.notes||[]).length?`<h3 class="sec">What changed</h3><ul class="list">${(d.notes||[]).map(n=>`<li>${esc(n)}</li>`).join("")}</ul>`:""}
+      <p class="muted" style="margin-top:14px">Note: no tool can guarantee passing every ATS. This follows ATS best practices (clean single-column layout, standard headings, JD-aligned keywords) and never invents experience you don't have.</p>
+    </div>`);
+    $("dlPdf").addEventListener("click",async()=>{
+      const btn=$("dlPdf");btn.textContent="Building…";btn.disabled=true;
+      try{
+        const r=await fetch("/api/ats-pdf",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({resume:atsResumeData})});
+        if(!r.ok)throw new Error("pdf failed");
+        const blob=await r.blob();const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="resume-ats.pdf";a.click();
+      }catch(e){alert("Couldn't build the PDF. Try again.");}
+      btn.textContent="⬇ Download ATS PDF";btn.disabled=false;
+    });
+  }
+
+  function renderPrep(d){
+    const fa=(d.focusAreas||[]).map(f=>`<li><b>${esc(f.topic)}</b> — ${esc(f.why)}<div class="muted">${esc(f.howToPrepare)}</div></li>`).join("");
+    const li=a=>(a||[]).map(x=>`<li>${esc(x)}</li>`).join("");
+    show(`<div class="panelfull">
+      <h3 class="sec">Focus areas</h3><ul class="list">${fa}</ul>
+      <div class="twocol">
+        <div><h3 class="sec">Skill gaps to shore up</h3><ul class="list">${li(d.skillGaps)}</ul></div>
+        <div><h3 class="sec">Likely interview topics</h3><ul class="list">${li(d.likelyInterviewTopics)}</ul></div>
+      </div>
+      <h3 class="sec">Prep checklist</h3><ul class="list">${li(d.prepChecklist)}</ul>
+      <h3 class="sec">What to study</h3><ul class="list">${li(d.resources)}</ul>
+    </div>`);
+  }
+
+  // ---- Mock interview (text, stage-aware) ----
+  let iv={questions:[],idx:0,qa:[],intro:"",stageLabel:""};
+  async function startInterview(){
+    if(!needInputs())return;
+    const stage=$("stageSel").value;
+    busy(true,"Preparing your interview…"); err.textContent=""; result.classList.remove("on");
+    try{
+      let d;
+      if(stage && stage!=="general") d=await post("/api/interview/stage",{jd:jd.value,resume:cv.value,stage});
+      else d=await post("/api/interview/start",{jd:jd.value,resume:cv.value});
+      iv={questions:d.questions||[],idx:0,qa:[],intro:d.intro||"",stageLabel:d.stageLabel||""};
+      if(!iv.questions.length)throw new Error("Could not generate questions.");
+      renderQuestion();
+    }catch(e){ err.textContent=e.message; }
+    finally{ busy(false); }
+  }
+  function renderQuestion(){
+    const q=iv.questions[iv.idx];
+    const introBlock = (iv.idx===0 && iv.intro) ? `<div class="qbox" style="background:#fff"><div class="qmeta">${esc(iv.stageLabel||"Interviewer")}</div><div style="font-size:14.5px;margin-top:4px">${esc(iv.intro)}</div></div>` : "";
+    show(`<div class="panelfull">
+      ${introBlock}
+      <div class="muted" style="margin-top:8px">Question ${iv.idx+1} of ${iv.questions.length}</div>
+      <div class="qbox"><div class="qmeta">${esc(q.type||"")} · ${esc(q.focus||"")}</div><div class="qtext">${esc(q.q)}</div></div>
+      <textarea id="ans" placeholder="Type your answer…" style="margin-top:12px"></textarea>
+      <button class="run" id="ansBtn" style="margin-top:10px">Submit answer</button>
+      <div class="loading" id="ivLoad"><div class="spin"></div><span>Reviewing your answer…</span></div>
+      <div id="fbArea"></div>
+    </div>`);
+    $("ansBtn").addEventListener("click",submitAnswer);
+  }
+  async function submitAnswer(){
+    const ans=$("ans").value.trim(); if(!ans){return;}
+    const q=iv.questions[iv.idx];
+    $("ansBtn").disabled=true; $("ivLoad").classList.add("on");
+    try{
+      const fb=await post("/api/interview/feedback",{jd:jd.value,question:q.q,answer:ans});
+      iv.qa.push({question:q.q,answer:ans});
+      const li=a=>(a||[]).map(x=>`<li>${esc(x)}</li>`).join("");
+      $("fbArea").innerHTML=`<div class="fb">
+        <div class="fbscore">Answer score: ${fb.score}/10</div>
+        <h3 class="sec">What worked</h3><ul class="list">${li(fb.strengths)}</ul>
+        <h3 class="sec">Improve</h3><ul class="list">${li(fb.improvements)}</ul>
+        <h3 class="sec">Stronger version</h3><p class="muted">${esc(fb.modelAnswer)}</p>
+        <button class="run" id="nextBtn" style="margin-top:12px">${iv.idx<iv.questions.length-1?"Next question →":"Finish & get summary"}</button>
+      </div>`;
+      $("ans").disabled=true; $("ansBtn").style.display="none";
+      $("nextBtn").addEventListener("click",()=>{ if(iv.idx<iv.questions.length-1){iv.idx++;renderQuestion();}else{finishInterview();} });
+    }catch(e){ $("fbArea").innerHTML=`<div class="err">${esc(e.message)}</div>`; $("ansBtn").disabled=false; }
+    finally{ $("ivLoad").classList.remove("on"); }
+  }
+  async function finishInterview(){
+    busy(true,"Summarizing your interview…");
+    try{
+      const s=await post("/api/interview/summary",{jd:jd.value,qa:iv.qa});
+      const li=a=>(a||[]).map(x=>`<li>${esc(x)}</li>`).join("");
+      show(`<div class="panelfull">
+        <div class="scorebig">${s.overallScore}<small>/10 overall</small></div>
+        <div class="verdict">${esc(s.verdict||"")}</div>
+        <p class="muted" style="margin-top:8px">${esc(s.summary||"")}</p>
+        <div class="twocol">
+          <div><h3 class="sec">Top strengths</h3><ul class="list">${li(s.topStrengths)}</ul></div>
+          <div><h3 class="sec">Highest-leverage fixes</h3><ul class="list">${li(s.topImprovements)}</ul></div>
+        </div>
+        <button class="run" id="againIv" style="margin-top:16px">Run another interview</button>
+      </div>`);
+      $("againIv").addEventListener("click",startInterview);
+    }catch(e){ err.textContent=e.message; }
+    finally{ busy(false); }
+  }
+
+  // ---- handoff from the Job Tracker: prefill JD/resume + open the right tool ----
+  (function readPrefill(){
+    let pf=null; try{ pf=JSON.parse(localStorage.getItem("rf_prefill")||"null"); }catch(_){}
+    if(!pf) return;
+    localStorage.removeItem("rf_prefill");
+    if(pf.jd) jd.value=pf.jd;
+    if(pf.resume) cv.value=pf.resume;
+    if(pf.tab){ selectTab(pf.tab); }
+    if(pf.stage && $("stageSel")){ $("stageSel").value=pf.stage; }
+    if(pf.tab==="interview" && pf.autostart){ startInterview(); }
+  })();
+</script>
+</body>
+</html>

@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>RoleFit — job tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<style>
+  :root{--bg:#F5F6F8;--card:#fff;--ink:#0F172A;--muted:#64748B;--line:#E5E8EC;--accent:#4F46E5;--accent2:#0EA5A4;--soft:#EEF0FE;--ok:#059669;--warn:#D97706;--bad:#DC2626}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:"Inter",system-ui,sans-serif;background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased}
+  .wrap{max-width:920px;margin:0 auto;padding:0 20px 80px}
+  header{display:flex;align-items:center;justify-content:space-between;padding:18px 0}
+  .logo{font-weight:800;font-size:19px;letter-spacing:-.02em;text-decoration:none;color:var(--ink)}
+  .logo b{color:var(--accent)}
+  .back{font-size:13px;color:var(--muted);text-decoration:none}
+  h1.page{font-size:24px;font-weight:800;letter-spacing:-.02em;margin:8px 0 4px}
+  .sub{color:var(--muted);font-size:14px;margin-bottom:18px}
+  .addbtn{background:var(--accent);color:#fff;border:none;padding:12px 18px;border-radius:11px;font-weight:700;font-size:14px;cursor:pointer}
+  .ghost{background:#fff;border:1px solid var(--line);color:var(--ink);padding:10px 14px;border-radius:10px;font-weight:600;font-size:13.5px;cursor:pointer}
+  .form{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin:14px 0;display:none}
+  .form.on{display:block}
+  .form label{font-size:13px;font-weight:600;display:block;margin:10px 0 5px}
+  .form input,.form textarea,.form select{width:100%;border:1px solid var(--line);border-radius:10px;padding:10px;font-family:inherit;font-size:13.5px;outline:none}
+  .form input:focus,.form textarea:focus{border-color:var(--accent)}
+  .form textarea{min-height:90px;resize:vertical;line-height:1.5}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:12px}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  @media(max-width:560px){.two{grid-template-columns:1fr}}
+
+  .empty{background:var(--card);border:1px dashed var(--line);border-radius:14px;padding:30px;text-align:center;color:var(--muted);font-size:14px}
+  .app{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:14px}
+  .app .ahead{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+  .app .co{font-weight:700;font-size:17px}
+  .app .ro{color:var(--muted);font-size:13.5px;margin-top:1px}
+  .app .del{background:none;border:none;color:var(--muted);cursor:pointer;font-size:15px}
+
+  .pipe{display:flex;gap:6px;overflow-x:auto;margin:14px -2px 6px;padding:2px}
+  .pstep{flex:0 0 auto;font-size:11.5px;font-weight:600;padding:6px 11px;border-radius:20px;background:#F1F3F6;color:var(--muted);border:1px solid transparent;cursor:pointer;white-space:nowrap}
+  .pstep.done{background:#EAF0FF;color:var(--accent)}
+  .pstep.cur{background:var(--accent);color:#fff}
+  .pstep.closed.cur{background:var(--ink)}
+
+  .action{background:var(--soft);border:1px solid #DDE0FB;border-radius:12px;padding:14px;margin-top:12px}
+  .action.interview{background:#F0FDFA;border-color:#CCFBF1}
+  .action .at{font-weight:700;font-size:14.5px}
+  .action .ad{color:var(--muted);font-size:13px;margin-top:3px;line-height:1.5}
+  .action .btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:11px}
+  .primary{background:var(--accent);color:#fff;border:none;padding:10px 15px;border-radius:10px;font-weight:700;font-size:13.5px;cursor:pointer}
+  .primary.teal{background:var(--accent2)}
+  .lite{background:#fff;border:1px solid var(--line);color:var(--ink);padding:10px 15px;border-radius:10px;font-weight:600;font-size:13.5px;cursor:pointer}
+
+  .notes{margin-top:12px}
+  .notes label{font-size:12px;color:var(--muted);font-weight:600}
+  .notes textarea{width:100%;border:1px solid var(--line);border-radius:10px;padding:10px;font-family:inherit;font-size:13px;min-height:54px;resize:vertical;margin-top:5px;outline:none}
+  .outcome{margin-top:12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .outcome select{border:1px solid var(--line);border-radius:9px;padding:8px;font-family:inherit;font-size:13px}
+  .small{font-size:12px;color:var(--muted)}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <a class="logo" href="/">Role<b>Fit</b></a>
+      <div style="display:flex;gap:14px;align-items:center">
+        <span id="syncBadge" class="back" style="font-size:12px"></span>
+        <a href="#" id="rfMember" class="back">Member code</a>
+        <a class="back" href="/candidate.html">← toolkit</a>
+      </div>
+    </header>
+
+    <h1 class="page">Job tracker</h1>
+    <div class="sub">Track every application through the hiring cycle. At each interview stage, rehearse with an AI playing that exact interviewer.</div>
+
+    <button class="addbtn" id="addBtn">+ Add application</button>
+
+    <div class="form" id="form">
+      <div class="two">
+        <div><label>Company</label><input id="fCo" placeholder="e.g. Acme Corp"/></div>
+        <div><label>Role</label><input id="fRo" placeholder="e.g. Senior Backend Engineer"/></div>
+      </div>
+      <label>Current stage</label>
+      <select id="fStage"></select>
+      <label>Job description</label>
+      <textarea id="fJd" placeholder="Paste the job description (used for fit + interviews)…"></textarea>
+      <label>Your resume / profile</label>
+      <textarea id="fCv" placeholder="Paste your resume text…"></textarea>
+      <div class="row">
+        <button class="primary" id="saveApp">Save application</button>
+        <button class="lite" id="cancelApp">Cancel</button>
+      </div>
+    </div>
+
+    <div id="list"></div>
+  </div>
+
+<script src="/app-billing.js"></script>
+<script>
+  const $=(id)=>document.getElementById(id);
+  const KEY="rf_applications";
+  const STAGES=[
+    {key:"to_apply",label:"To apply",interview:null},
+    {key:"applied",label:"Applied",interview:null},
+    {key:"recruiter",label:"Recruiter screen",interview:"recruiter"},
+    {key:"hiring_manager",label:"Hiring manager",interview:"hiring_manager"},
+    {key:"technical",label:"Technical round",interview:"technical"},
+    {key:"comp",label:"Comp negotiation",interview:"comp"},
+    {key:"background",label:"Background check",interview:null},
+    {key:"offer",label:"Offer",interview:null},
+    {key:"closed",label:"Closed",interview:null},
+  ];
+  const stageIdx=(k)=>STAGES.findIndex(s=>s.key===k);
+  const esc=(s)=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c]));
+
+  // populate stage select in the add form
+  $("fStage").innerHTML=STAGES.map(s=>`<option value="${s.key}">${s.label}</option>`).join("");
+
+  function load(){ try{ return JSON.parse(localStorage.getItem(KEY)||"[]"); }catch(_){ return []; } }
+  function saveLocal(){ localStorage.setItem(KEY,JSON.stringify(apps)); }
+  const token=()=> (window.RF && window.RF.token) || localStorage.getItem("rf_token") || "";
+
+  // sync indicator
+  function setSync(state){
+    const el=$("syncBadge"); if(!el) return;
+    el.textContent = state==="saving" ? "Syncing…" : state==="synced" ? "✓ Synced to your account"
+      : state==="local" ? "Saved on this device" : state==="off" ? "Members sync across devices" : "";
+    el.style.color = state==="synced" ? "var(--ok)" : "var(--muted)";
+  }
+  let pushTimer;
+  async function pushServer(){
+    try{ await window.RF.post("/api/apps/save",{applications:apps}); setSync("synced"); }
+    catch(_){ setSync("local"); }
+  }
+  // every mutation calls save(): cache locally, and (if a member) debounce a server push
+  function save(){
+    saveLocal();
+    if(token()){ setSync("saving"); clearTimeout(pushTimer); pushTimer=setTimeout(pushServer,600); }
+  }
+
+  let apps=load();
+
+  async function syncOnLoad(){
+    if(token()){
+      setSync("saving");
+      try{
+        const d=await window.RF.post("/api/apps/load",{});
+        const serverApps=Array.isArray(d.applications)?d.applications:[];
+        if(serverApps.length){ apps=serverApps; saveLocal(); setSync("synced"); }   // server is source of truth
+        else if(apps.length){ await pushServer(); }                                  // migrate this device's apps up
+        else setSync("synced");
+      }catch(_){ apps=load(); setSync("local"); }                                     // offline / not a member
+    } else { setSync("off"); }
+    render();
+  }
+
+  // add form
+  $("addBtn").onclick=()=>{ $("form").classList.add("on"); $("fCo").focus(); };
+  $("cancelApp").onclick=()=>{ $("form").classList.remove("on"); clearForm(); };
+  function clearForm(){ ["fCo","fRo","fJd","fCv"].forEach(i=>$(i).value=""); $("fStage").value="to_apply"; }
+  $("saveApp").onclick=()=>{
+    const co=$("fCo").value.trim(), ro=$("fRo").value.trim();
+    if(!co&&!ro){ $("fCo").focus(); return; }
+    apps.unshift({ id:"a"+Date.now(), company:co||"Untitled", role:ro||"", jd:$("fJd").value.trim(), resume:$("fCv").value.trim(), stage:$("fStage").value, notes:"", outcome:"", updatedAt:Date.now() });
+    save(apps); $("form").classList.remove("on"); clearForm(); render();
+  };
+
+  // hand an application into the toolkit with a tool/stage preselected
+  function openTool(app, tab, stage, autostart){
+    localStorage.setItem("rf_prefill", JSON.stringify({ jd:app.jd, resume:app.resume, tab, stage:stage||"", autostart:!!autostart }));
+    location.href="/candidate.html";
+  }
+
+  function setStage(id,key){ const a=apps.find(x=>x.id===id); if(!a)return; a.stage=key; a.updatedAt=Date.now(); save(apps); render(); }
+  function del(id){ if(!confirm("Delete this application?"))return; apps=apps.filter(x=>x.id!==id); save(apps); render(); }
+  let noteTimer;
+  function noteChange(id,val){ const a=apps.find(x=>x.id===id); if(!a)return; a.notes=val; clearTimeout(noteTimer); noteTimer=setTimeout(()=>save(apps),400); }
+  function setOutcome(id,val){ const a=apps.find(x=>x.id===id); if(!a)return; a.outcome=val; save(apps); }
+
+  function actionFor(app){
+    const s=STAGES[stageIdx(app.stage)]||STAGES[0];
+    const hasInputs=app.jd && app.resume;
+    if(s.interview){
+      return {cls:"interview", title:`Prepare for your ${s.label.toLowerCase()}`,
+        desc:`An AI will play the ${s.label.toLowerCase()} interviewer, using this job description and your profile, and ask the questions this stage really asks.`,
+        btns:`<button class="primary teal" data-act="interview" data-stage="${s.interview}">▶ Start ${esc(s.label)} mock</button>
+              <button class="lite" data-act="prep">Prep plan</button>`,
+        warn:hasInputs?"":"Add the job description and your resume to this application to tailor the interview."};
+    }
+    if(s.key==="to_apply"){
+      return {cls:"", title:"Get application-ready", desc:"Before you apply: check your fit and optimize your resume against this job description.",
+        btns:`<button class="primary" data-act="fit">Check fit</button><button class="lite" data-act="ats">Optimize resume</button>`,
+        warn:hasInputs?"":"Add the job description and your resume to use these tools."};
+    }
+    if(s.key==="applied"){
+      return {cls:"", title:"Waiting to hear back", desc:"While you wait, build a prep plan so you're ready the moment a recruiter calls.",
+        btns:`<button class="primary" data-act="prep">Build prep plan</button>`, warn:hasInputs?"":"Add the JD and resume to prep."};
+    }
+    if(s.key==="background"){
+      return {cls:"", title:"Background / reference check", desc:"Line up references, confirm dates and titles match your resume, and keep notes here. No interview needed.", btns:"", warn:""};
+    }
+    if(s.key==="offer"){
+      return {cls:"interview", title:"Evaluate & negotiate your offer", desc:"Rehearse the comp conversation with an AI recruiter before you respond.",
+        btns:`<button class="primary teal" data-act="interview" data-stage="comp">▶ Practice negotiation</button>`, warn:hasInputs?"":"Add the JD and resume to tailor it."};
+    }
+    return null; // closed handled separately
+  }
+
+  function render(){
+    const list=$("list");
+    if(!apps.length){ list.innerHTML=`<div class="empty">No applications yet. Add your first one — paste the job description and your resume, and RoleFit will track it through the whole hiring cycle.</div>`; return; }
+    list.innerHTML="";
+    apps.forEach(app=>{
+      const ci=stageIdx(app.stage);
+      const pipe=STAGES.map((s,i)=>{
+        const cls=i<ci?"done":i===ci?("cur"+(s.key==="closed"?" closed":"")):"";
+        return `<button class="pstep ${cls}" data-stage="${s.key}">${s.label}</button>`;
+      }).join("");
+      const isClosed=app.stage==="closed";
+      const act=isClosed?null:actionFor(app);
+      const actHtml=act?`<div class="action ${act.cls}">
+          <div class="at">${esc(act.title)}</div>
+          <div class="ad">${esc(act.desc)}</div>
+          ${act.warn?`<div class="small" style="margin-top:8px;color:var(--warn)">${esc(act.warn)}</div>`:""}
+          ${act.btns?`<div class="btns">${act.btns}</div>`:""}
+        </div>`:"";
+      const closedHtml=isClosed?`<div class="outcome"><span class="small">Outcome:</span>
+          <select data-out>
+            <option value="">—</option>
+            <option value="accepted"${app.outcome==="accepted"?" selected":""}>Accepted 🎉</option>
+            <option value="rejected"${app.outcome==="rejected"?" selected":""}>Rejected</option>
+            <option value="withdrawn"${app.outcome==="withdrawn"?" selected":""}>Withdrew</option>
+          </select></div>`:"";
+      const el=document.createElement("div"); el.className="app"; el.dataset.id=app.id;
+      el.innerHTML=`<div class="ahead">
+          <div><div class="co">${esc(app.company)}</div><div class="ro">${esc(app.role)}</div></div>
+          <button class="del" title="delete">🗑</button>
+        </div>
+        <div class="pipe">${pipe}</div>
+        ${actHtml}${closedHtml}
+        <div class="notes"><label>Notes</label><textarea placeholder="Recruiter name, dates, questions they asked, follow-ups…">${esc(app.notes)}</textarea></div>`;
+      // wire
+      el.querySelector(".del").onclick=()=>del(app.id);
+      el.querySelectorAll(".pstep").forEach(b=>b.onclick=()=>setStage(app.id,b.dataset.stage));
+      el.querySelector(".notes textarea").addEventListener("input",e=>noteChange(app.id,e.target.value));
+      const outSel=el.querySelector("[data-out]"); if(outSel) outSel.onchange=e=>setOutcome(app.id,e.target.value);
+      el.querySelectorAll("[data-act]").forEach(b=>b.onclick=()=>{
+        const act=b.dataset.act;
+        if(act==="interview") openTool(app,"interview",b.dataset.stage,true);
+        else if(act==="fit") openTool(app,"fit");
+        else if(act==="ats") openTool(app,"ats");
+        else if(act==="prep") openTool(app,"prep");
+      });
+      list.appendChild(el);
+    });
+  }
+  syncOnLoad();
+</script>
+</body>
+</html>
