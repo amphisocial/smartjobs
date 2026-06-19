@@ -34,6 +34,10 @@
   .app .co{font-weight:700;font-size:17px}
   .app .ro{color:var(--muted);font-size:13.5px;margin-top:1px}
   .app .del{background:none;border:none;color:var(--muted);cursor:pointer;font-size:15px}
+  .app .edit{background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px}
+  .app .edit:hover,.app .del:hover{color:var(--ink)}
+  .upl{font-size:12px;color:var(--accent);background:#fff;border:1px solid var(--line);padding:6px 10px;border-radius:8px;cursor:pointer;font-weight:600}
+  .upl:hover{border-color:var(--accent)}
 
   .pipe{display:flex;gap:6px;overflow-x:auto;margin:14px -2px 6px;padding:2px}
   .pstep{flex:0 0 auto;font-size:11.5px;font-weight:600;padding:6px 11px;border-radius:20px;background:#F1F3F6;color:var(--muted);border:1px solid transparent;cursor:pointer;white-space:nowrap}
@@ -75,16 +79,31 @@
     <button class="addbtn" id="addBtn">+ Add application</button>
 
     <div class="form" id="form">
+      <div id="formTitle" style="font-weight:700;margin-bottom:6px">Add application</div>
       <div class="two">
         <div><label>Company</label><input id="fCo" placeholder="e.g. Acme Corp"/></div>
         <div><label>Role</label><input id="fRo" placeholder="e.g. Senior Backend Engineer"/></div>
       </div>
       <label>Current stage</label>
       <select id="fStage"></select>
-      <label>Job description</label>
-      <textarea id="fJd" placeholder="Paste the job description (used for fit + interviews)…"></textarea>
-      <label>Your resume / profile</label>
-      <textarea id="fCv" placeholder="Paste your resume text…"></textarea>
+
+      <div style="display:flex;justify-content:space-between;align-items:center;margin:12px 0 5px">
+        <label style="margin:0">Job description</label>
+        <button class="upl" id="fJdLink" type="button">🔗 from link</button>
+      </div>
+      <div id="fJdUrlRow" style="display:none;gap:6px;margin-bottom:6px">
+        <input id="fJdUrl" placeholder="paste a job posting link…" style="flex:1;border:1px solid var(--line);border-radius:8px;padding:8px;font-size:13px;outline:none"/>
+        <button class="upl" id="fJdFetch" type="button">Fetch</button>
+      </div>
+      <textarea id="fJd" placeholder="Paste the JD — or use 🔗 from link…"></textarea>
+
+      <div style="display:flex;justify-content:space-between;align-items:center;margin:12px 0 5px">
+        <label style="margin:0">Your resume / profile</label>
+        <button class="upl" id="fCvFile" type="button">📄 upload PDF/Word</button>
+      </div>
+      <input type="file" id="fCvDoc" accept=".pdf,.docx" style="display:none"/>
+      <textarea id="fCv" placeholder="Paste your resume — or upload a 📄 PDF/Word file…"></textarea>
+
       <div class="row">
         <button class="primary" id="saveApp">Save application</button>
         <button class="lite" id="cancelApp">Cancel</button>
@@ -153,16 +172,48 @@
     render();
   }
 
-  // add form
-  $("addBtn").onclick=()=>{ $("form").classList.add("on"); $("fCo").focus(); };
-  $("cancelApp").onclick=()=>{ $("form").classList.remove("on"); clearForm(); };
-  function clearForm(){ ["fCo","fRo","fJd","fCv"].forEach(i=>$(i).value=""); $("fStage").value="to_apply"; }
+  // add / edit form
+  let editingId=null;
+  function clearForm(){ ["fCo","fRo","fJd","fCv","fJdUrl"].forEach(i=>$(i).value=""); $("fStage").value="to_apply"; $("fJdUrlRow").style.display="none"; }
+  function openAdd(){ editingId=null; clearForm(); $("formTitle").textContent="Add application"; $("saveApp").textContent="Save application"; $("form").classList.add("on"); $("fCo").focus(); }
+  function openEdit(app){
+    editingId=app.id;
+    $("fCo").value=app.company||""; $("fRo").value=app.role||""; $("fStage").value=app.stage||"to_apply";
+    $("fJd").value=app.jd||""; $("fCv").value=app.resume||"";
+    $("formTitle").textContent="Edit application"; $("saveApp").textContent="Save changes";
+    $("form").classList.add("on"); $("form").scrollIntoView({behavior:"smooth",block:"center"});
+  }
+  $("addBtn").onclick=openAdd;
+  $("cancelApp").onclick=()=>{ $("form").classList.remove("on"); editingId=null; clearForm(); };
   $("saveApp").onclick=()=>{
     const co=$("fCo").value.trim(), ro=$("fRo").value.trim();
     if(!co&&!ro){ $("fCo").focus(); return; }
-    apps.unshift({ id:"a"+Date.now(), company:co||"Untitled", role:ro||"", jd:$("fJd").value.trim(), resume:$("fCv").value.trim(), stage:$("fStage").value, notes:"", outcome:"", updatedAt:Date.now() });
-    save(apps); $("form").classList.remove("on"); clearForm(); render();
+    const data={ company:co||"Untitled", role:ro||"", jd:$("fJd").value.trim(), resume:$("fCv").value.trim(), stage:$("fStage").value };
+    if(editingId){ const a=apps.find(x=>x.id===editingId); if(a){ Object.assign(a,data); a.updatedAt=Date.now(); } }
+    else { apps.unshift({ id:"a"+Date.now(), ...data, notes:"", outcome:"", updatedAt:Date.now() }); }
+    save(apps); $("form").classList.remove("on"); editingId=null; clearForm(); render();
   };
+
+  // JD from link + resume file upload (reuse the toolkit endpoints)
+  function fileToDataUrl(file){return new Promise(r=>{const fr=new FileReader();fr.onload=()=>r(fr.result);fr.readAsDataURL(file);});}
+  $("fJdLink").onclick=()=>{const r=$("fJdUrlRow");const open=r.style.display!=="flex";r.style.display=open?"flex":"none";if(open)$("fJdUrl").focus();};
+  async function fFetchJd(){
+    const url=$("fJdUrl").value.trim(); if(!url)return;
+    const b=$("fJdFetch"); b.textContent="fetching…"; b.disabled=true;
+    try{ const r=await fetch("/api/fetch-jd",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({url})}); const d=await r.json();
+      if(r.ok&&d.found&&d.jd){ $("fJd").value=d.jd; $("fJdUrlRow").style.display="none"; $("fJdUrl").value=""; } else alert(d.note||d.error||"Couldn't read a JD from that link."); }
+    catch(e){ alert("Couldn't fetch that link."); }
+    b.textContent="Fetch"; b.disabled=false;
+  }
+  $("fJdFetch").onclick=fFetchJd; $("fJdUrl").addEventListener("keydown",e=>{if(e.key==="Enter")fFetchJd();});
+  $("fCvFile").onclick=()=>$("fCvDoc").click();
+  $("fCvDoc").addEventListener("change",async()=>{
+    const f=$("fCvDoc").files[0]; if(!f)return; $("fCvFile").textContent="reading…";
+    try{ const data=await fileToDataUrl(f); const r=await fetch("/api/extract-file",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({data,mime:f.type,filename:f.name})}); const d=await r.json();
+      if(r.ok&&d.text) $("fCv").value=d.text; else alert(d.error||"Couldn't read that file."); }
+    catch(e){ alert("Couldn't read that file."); }
+    $("fCvFile").textContent="📄 upload PDF/Word"; $("fCvDoc").value="";
+  });
 
   // hand an application into the toolkit with a tool/stage preselected
   function openTool(app, tab, stage, autostart){
@@ -233,12 +284,13 @@
       const el=document.createElement("div"); el.className="app"; el.dataset.id=app.id;
       el.innerHTML=`<div class="ahead">
           <div><div class="co">${esc(app.company)}</div><div class="ro">${esc(app.role)}</div></div>
-          <button class="del" title="delete">🗑</button>
+          <div style="display:flex;gap:10px"><button class="edit" title="edit JD / resume">✎</button><button class="del" title="delete">🗑</button></div>
         </div>
         <div class="pipe">${pipe}</div>
         ${actHtml}${closedHtml}
         <div class="notes"><label>Notes</label><textarea placeholder="Recruiter name, dates, questions they asked, follow-ups…">${esc(app.notes)}</textarea></div>`;
       // wire
+      el.querySelector(".edit").onclick=()=>openEdit(app);
       el.querySelector(".del").onclick=()=>del(app.id);
       el.querySelectorAll(".pstep").forEach(b=>b.onclick=()=>setStage(app.id,b.dataset.stage));
       el.querySelector(".notes textarea").addEventListener("input",e=>noteChange(app.id,e.target.value));

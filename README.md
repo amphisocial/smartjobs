@@ -35,6 +35,10 @@ Same model as Roastrobe. Members get unlimited use; everyone else gets `FREE_DAI
 - Add Railway Postgres (sets `DATABASE_URL`) before charging real money — the member store persists there. Without it, an in-memory fallback is used (dev only).
 - Register a webhook in Stripe pointing to `https://<your-domain>/webhook/stripe` for events: `checkout.session.completed`, `customer.subscription.updated`, `customer.subscription.deleted`, `invoice.payment_failed`. Do this in BOTH test and live mode (two different signing secrets).
 - Multi-device: subscribers get a member code on the success page; "Member code" on either tool page redeems it on another device.
-- Default price shown is $9/mo (text in index.html + app-billing.js). The real charge is whatever Stripe price you point `STRIPE_*_PRICE_ID` at. Stripe prices are immutable — to change price, create a new price and update the variable.
+- Default price shown is $4.99/mo (text in index.html + app-billing.js). The real charge is whatever Stripe price you point `STRIPE_*_PRICE_ID` at. Stripe prices are immutable — to change price, create a new price and update the variable.
 
 Which AI runs cost a credit: `/api/fit`, `/api/ats`, `/api/training`, `/api/interview/start`, `/api/hr/rank`. Free follow-ons: OCR, the ATS PDF, interview feedback/summary, HR talking points.
+
+## Inputs: paste / link / file / screenshot
+- **Job description:** paste, **🔗 from a link** (`POST /api/fetch-jd` fetches the page server-side, with SSRF guards blocking private/metadata IPs, and the AI extracts the posting), or 📷 screenshot (OCR). Link works for most company/ATS career pages; LinkedIn/Indeed often need a login so paste those.
+- **Resume:** paste, **📄 PDF/Word upload** (`POST /api/extract-file` parses .docx via mammoth and .pdf via unpdf to text), or 📷 screenshot. The ATS optimizer treats the uploaded resume as the source of truth and frames its output as additions/updates — it never fabricates experience.

@@ -28,6 +28,8 @@
   .cand textarea{min-height:90px}
   .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
   .add{background:#fff;border:1px dashed var(--accent);color:var(--accent-d);padding:10px 14px;border-radius:10px;font-weight:600;font-size:13.5px;cursor:pointer}
+  .upl{font-size:12px;color:var(--accent-d);background:#fff;border:1px solid var(--line);padding:7px 11px;border-radius:8px;cursor:pointer;font-weight:600}
+  .upl:hover{border-color:var(--accent)}
   .run{background:var(--accent);color:#fff;border:none;padding:12px 22px;border-radius:10px;font-weight:700;font-size:14px;cursor:pointer}
   .run:disabled{opacity:.5;cursor:default}
   .loading{display:none;align-items:center;gap:10px;color:var(--muted);font-size:14px;margin-top:14px}
@@ -73,8 +75,9 @@
     <div class="sub">Paste the role, add candidate resumes, and get a ranked shortlist with screening points.</div>
 
     <div class="panel">
-      <label class="fld">Job description</label>
-      <textarea id="jd" placeholder="Paste the role's job description…"></textarea>
+      <div style="display:flex;justify-content:space-between;align-items:center"><label class="fld" style="margin:0">Job description</label><button class="upl" id="jdLinkBtn" type="button">🔗 from link</button></div>
+      <div id="jdUrlRow" style="display:none;gap:6px;margin-top:10px"><input id="jdUrl" placeholder="paste a job posting link…" style="flex:1;border:1px solid var(--line);border-radius:8px;padding:9px;font-size:13px;outline:none"/><button class="upl" id="jdFetch" type="button">Fetch</button></div>
+      <textarea id="jd" placeholder="Paste the role's job description…" style="margin-top:10px"></textarea>
     </div>
 
     <div id="cands"></div>
@@ -97,14 +100,29 @@
   let seq=0;
   function esc(s){return String(s==null?"":s).replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));}
 
+  function fileToDataUrl(file){return new Promise(r=>{const fr=new FileReader();fr.onload=()=>r(fr.result);fr.readAsDataURL(file);});}
+
   function addCand(name=""){
     const id="c"+(++seq);
     const div=document.createElement("div");
     div.className="cand"; div.dataset.id=id;
     div.innerHTML=`<button class="rm" title="remove">✕</button>
       <input class="name" placeholder="Candidate name (optional)" value="${esc(name)}"/>
-      <textarea placeholder="Paste this candidate's resume text…"></textarea>`;
+      <div style="display:flex;justify-content:flex-end;margin-bottom:6px"><button class="upl doc-btn" type="button">📄 upload PDF/Word</button></div>
+      <input type="file" class="doc" accept=".pdf,.docx" style="display:none"/>
+      <textarea placeholder="Paste this candidate's resume — or upload a file…"></textarea>`;
     div.querySelector(".rm").addEventListener("click",()=>{div.remove();updateCount();});
+    const ta=div.querySelector("textarea"), docIn=div.querySelector(".doc"), upl=div.querySelector(".doc-btn");
+    upl.addEventListener("click",()=>docIn.click());
+    docIn.addEventListener("change",async()=>{
+      const f=docIn.files[0]; if(!f)return; upl.textContent="reading…";
+      try{
+        const data=await fileToDataUrl(f);
+        const r=await fetch("/api/extract-file",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({data,mime:f.type,filename:f.name})});
+        const d=await r.json(); if(r.ok&&d.text) ta.value=d.text; else alert(d.error||"Couldn't read that file.");
+      }catch(e){ alert("Couldn't read that file. Try pasting."); }
+      upl.textContent="📄 upload PDF/Word"; docIn.value="";
+    });
     candsEl.appendChild(div); updateCount();
   }
   function updateCount(){ $("cnt").textContent=candsEl.children.length+" candidate"+(candsEl.children.length===1?"":"s"); }
@@ -120,6 +138,22 @@
   }
 
   async function post(url,body){ return window.RF.post(url,body); }
+
+  // job description from a link
+  $("jdLinkBtn").addEventListener("click",()=>{const r=$("jdUrlRow");const open=r.style.display!=="flex";r.style.display=open?"flex":"none";if(open)$("jdUrl").focus();});
+  async function fetchJd(){
+    const url=$("jdUrl").value.trim(); if(!url)return;
+    const btn=$("jdFetch"); btn.textContent="fetching…"; btn.disabled=true;
+    try{
+      const r=await fetch("/api/fetch-jd",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({url})});
+      const d=await r.json();
+      if(r.ok&&d.found&&d.jd){ $("jd").value=d.jd; $("jdUrlRow").style.display="none"; $("jdUrl").value=""; }
+      else alert(d.note||d.error||"Couldn't read a job description from that link. Please paste it.");
+    }catch(e){ alert("Couldn't fetch that link. Please paste the description."); }
+    btn.textContent="Fetch"; btn.disabled=false;
+  }
+  $("jdFetch").addEventListener("click",fetchJd);
+  $("jdUrl").addEventListener("keydown",e=>{if(e.key==="Enter")fetchJd();});
 
   $("rankBtn").addEventListener("click",async()=>{
     const jd=$("jd").value.trim(); const candidates=collect();

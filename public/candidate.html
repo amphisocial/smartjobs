@@ -96,17 +96,28 @@
     <div class="inputs">
       <div class="panel">
         <div class="ph"><label>Job description</label>
-          <button class="uploadbtn" id="jdUp">📷 screenshot</button>
+          <div style="display:flex;gap:6px">
+            <button class="uploadbtn" id="jdLinkBtn">🔗 link</button>
+            <button class="uploadbtn" id="jdUp">📷 screenshot</button>
+          </div>
           <input type="file" id="jdFile" accept="image/*" />
         </div>
-        <textarea id="jd" placeholder="Paste the full job description here…"></textarea>
+        <div id="jdUrlRow" style="display:none;gap:6px;margin-bottom:8px">
+          <input id="jdUrl" placeholder="paste a job posting link…" style="flex:1;border:1px solid var(--line);border-radius:8px;padding:9px;font-size:13px;outline:none" />
+          <button class="uploadbtn" id="jdFetch">Fetch</button>
+        </div>
+        <textarea id="jd" placeholder="Paste the job description — or use 🔗 link / 📷 screenshot…"></textarea>
       </div>
       <div class="panel">
         <div class="ph"><label>Your resume</label>
-          <button class="uploadbtn" id="cvUp">📷 screenshot</button>
+          <div style="display:flex;gap:6px">
+            <button class="uploadbtn" id="cvFileBtn">📄 file</button>
+            <button class="uploadbtn" id="cvUp">📷 screenshot</button>
+          </div>
           <input type="file" id="cvFile" accept="image/*" />
+          <input type="file" id="cvDoc" accept=".pdf,.docx" />
         </div>
-        <textarea id="cv" placeholder="Paste your current resume text here…"></textarea>
+        <textarea id="cv" placeholder="Paste your resume — or upload a 📄 PDF/Word file…"></textarea>
       </div>
     </div>
 
@@ -167,6 +178,39 @@
   }
   function downscale(file,maxEdge,q){return new Promise(res=>{const img=new Image();img.onload=()=>{let{width:w,height:h}=img;const s=Math.min(1,maxEdge/Math.max(w,h));w=Math.round(w*s);h=Math.round(h*s);const c=document.createElement("canvas");c.width=w;c.height=h;c.getContext("2d").drawImage(img,0,0,w,h);res(c.toDataURL("image/jpeg",q));};img.src=URL.createObjectURL(file);});}
   wireUpload("jdUp","jdFile",jd,"jd"); wireUpload("cvUp","cvFile",cv,"resume");
+
+  // resume file upload (.pdf / .docx) -> textarea
+  function fileToDataUrl(file){return new Promise(r=>{const fr=new FileReader();fr.onload=()=>r(fr.result);fr.readAsDataURL(file);});}
+  function wireDoc(btnId,inputId,target,label){
+    $(btnId).addEventListener("click",()=>$(inputId).click());
+    $(inputId).addEventListener("change",async()=>{
+      const f=$(inputId).files[0]; if(!f)return; $(btnId).textContent="reading…";
+      try{
+        const data=await fileToDataUrl(f);
+        const r=await fetch("/api/extract-file",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({data,mime:f.type,filename:f.name})});
+        const d=await r.json();
+        if(r.ok&&d.text) target.value=d.text; else alert(d.error||"Couldn't read that file.");
+      }catch(e){ alert("Couldn't read that file. Try pasting."); }
+      $(btnId).textContent=label; $(inputId).value="";
+    });
+  }
+  wireDoc("cvFileBtn","cvDoc",cv,"📄 file");
+
+  // job description from a link
+  $("jdLinkBtn").addEventListener("click",()=>{const r=$("jdUrlRow");const open=r.style.display!=="flex";r.style.display=open?"flex":"none";if(open)$("jdUrl").focus();});
+  async function fetchJd(){
+    const url=$("jdUrl").value.trim(); if(!url)return;
+    const btn=$("jdFetch"); btn.textContent="fetching…"; btn.disabled=true;
+    try{
+      const r=await fetch("/api/fetch-jd",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({url})});
+      const d=await r.json();
+      if(r.ok&&d.found&&d.jd){ jd.value=d.jd; $("jdUrlRow").style.display="none"; $("jdUrl").value=""; }
+      else alert(d.note||d.error||"Couldn't read a job description from that link. Please paste it.");
+    }catch(e){ alert("Couldn't fetch that link. Please paste the description."); }
+    btn.textContent="Fetch"; btn.disabled=false;
+  }
+  $("jdFetch").addEventListener("click",fetchJd);
+  $("jdUrl").addEventListener("keydown",e=>{if(e.key==="Enter")fetchJd();});
 
   function needInputs(){ if(!jd.value.trim()||!cv.value.trim()){err.textContent="Paste both a job description and your resume first.";return false;} err.textContent=""; return true; }
   function busy(on,txt){ $("runBtn").disabled=on; loading.classList.toggle("on",on); if(txt)$("loadingTxt").textContent=txt; }
