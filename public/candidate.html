@@ -93,6 +93,14 @@
     <h1 class="page">Job-seeker toolkit</h1>
     <div class="sub">Paste the job description and your resume once — then run any tool below.</div>
 
+    <div id="linkBanner" style="display:none;background:var(--soft);border:1px solid #DDE0FB;border-radius:12px;padding:12px 14px;margin-bottom:14px;display:none;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
+      <div style="font-size:13.5px">📋 Linked to your <b id="linkCo"></b> application — changes you save flow back to the tracker.</div>
+      <div style="display:flex;gap:8px">
+        <button class="uploadbtn" id="saveCurResume">💾 Save current resume</button>
+        <a class="back" href="/tracker.html" style="font-size:13px">← tracker</a>
+      </div>
+    </div>
+
     <div class="inputs">
       <div class="panel">
         <div class="ph"><label>Job description</label>
@@ -140,6 +148,11 @@
     </div>
 
     <button class="run" id="runBtn">Analyze fit</button>
+
+    <div id="liveWrap" style="display:none;margin-top:12px">
+      <button class="run" id="liveBtn" style="background:var(--accent2)">🎤 Live voice interview <span style="font-size:11px;background:rgba(255,255,255,.25);padding:2px 8px;border-radius:10px;margin-left:6px;vertical-align:middle">Paid</span></button>
+      <div class="sub" style="margin-top:7px;font-size:12px">Speak your answers out loud — the AI talks back, asks follow-ups, then scores you. 2 per day on a membership · <b>Pro (unlimited) coming soon</b>. Works best in Chrome or Edge.</div>
+    </div>
     <div class="loading" id="loading"><div class="spin"></div><span id="loadingTxt">Working…</span></div>
     <div class="err" id="err"></div>
 
@@ -151,6 +164,7 @@
   const $=(id)=>document.getElementById(id);
   const jd=$("jd"), cv=$("cv"), result=$("result"), err=$("err"), loading=$("loading");
   let tab="fit";
+  let linkedAppId=null, linkedAppCompany="";
   const TAB_LABEL={fit:"Analyze fit",ats:"Optimize resume",prep:"Build prep plan",interview:"Start mock interview"};
 
   // tab switching
@@ -158,6 +172,7 @@
     [...$("tabs").children].forEach(x=>x.classList.toggle("on",x.dataset.t===t));
     tab=t; $("runBtn").textContent=TAB_LABEL[tab];
     $("stageWrap").style.display = (tab==="interview") ? "block" : "none";
+    $("liveWrap").style.display = (tab==="interview") ? "block" : "none";
     result.classList.remove("on"); result.innerHTML=""; err.textContent="";
   }
   $("tabs").addEventListener("click",e=>{const b=e.target.closest(".tab");if(!b)return;selectTab(b.dataset.t);});
@@ -217,6 +232,37 @@
   async function post(url,body){ return window.RF.post(url,body); }
   function esc(s){return String(s==null?"":s).replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));}
 
+  // ---- writeback to a linked tracker application ----
+  function resumeToText(r){
+    r=r||{}; const c=r.contact||{}; const L=[];
+    if(r.name) L.push(r.name);
+    const contact=[c.email,c.phone,c.location,...((c.links)||[])].filter(Boolean).join(" | ");
+    if(contact) L.push(contact);
+    if(r.summary){ L.push("","SUMMARY",r.summary); }
+    if((r.skills||[]).length){ L.push("","SKILLS",(r.skills||[]).join(", ")); }
+    if((r.experience||[]).length){ L.push("","EXPERIENCE"); (r.experience||[]).forEach(e=>{ const meta=[e.location,e.dates].filter(Boolean).join(", "); L.push([e.title,e.company].filter(Boolean).join(" — ")+(meta?"  ("+meta+")":"")); (e.bullets||[]).forEach(b=>L.push("• "+b)); L.push(""); }); }
+    if((r.education||[]).length){ L.push("EDUCATION"); (r.education||[]).forEach(e=>L.push([e.degree,e.school,e.dates].filter(Boolean).join(" — "))); }
+    if((r.certifications||[]).length){ L.push("","CERTIFICATIONS",(r.certifications||[]).join(", ")); }
+    return L.join("\n").replace(/\n{3,}/g,"\n\n").trim();
+  }
+  async function saveResumeToApp(text){
+    if(!linkedAppId || !text) return false;
+    let apps=[]; try{ apps=JSON.parse(localStorage.getItem("rf_applications")||"[]"); }catch(_){}
+    const a=apps.find(x=>x.id===linkedAppId);
+    if(!a) return false;
+    a.resume=text; a.updatedAt=Date.now();
+    localStorage.setItem("rf_applications", JSON.stringify(apps));
+    const token=(window.RF&&window.RF.token)||localStorage.getItem("rf_token")||"";
+    if(token){ try{ await window.RF.post("/api/apps/save",{applications:apps}); }catch(_){} }
+    return true;
+  }
+  $("saveCurResume").addEventListener("click",async()=>{
+    const b=$("saveCurResume");
+    const ok=await saveResumeToApp(cv.value.trim());
+    b.textContent= ok ? "Saved ✓" : "Couldn't save";
+    setTimeout(()=>b.textContent="💾 Save current resume",1600);
+  });
+
   $("runBtn").addEventListener("click",async()=>{
     if(tab==="interview"){ return startInterview(); }
     if(!needInputs())return;
@@ -267,6 +313,7 @@
         ${(r.certifications||[]).length?`<div class="rh">Certifications</div><div>${esc((r.certifications||[]).join(" • "))}</div>`:""}
       </div>
       <button class="dl" id="dlPdf">⬇ Download ATS PDF</button>
+      ${linkedAppId?`<button class="dl" id="saveAtsApp" style="background:var(--accent);margin-left:8px">💾 Save to ${esc(linkedAppCompany)} application</button>`:""}
       ${added?`<h3 class="sec">Keywords now reflected (genuinely supported)</h3><div class="chips">${added}</div>`:""}
       ${consider?`<h3 class="sec">Add these only if you truly have them</h3><div class="chips">${consider}</div>`:""}
       ${(d.notes||[]).length?`<h3 class="sec">What changed</h3><ul class="list">${(d.notes||[]).map(n=>`<li>${esc(n)}</li>`).join("")}</ul>`:""}
@@ -281,6 +328,12 @@
       }catch(e){alert("Couldn't build the PDF. Try again.");}
       btn.textContent="⬇ Download ATS PDF";btn.disabled=false;
     });
+    if(linkedAppId){ const sb=$("saveAtsApp"); if(sb) sb.addEventListener("click",async()=>{
+      const text=resumeToText(atsResumeData);
+      const ok=await saveResumeToApp(text);
+      if(ok){ cv.value=text; sb.textContent="Saved ✓ — tracker updated"; sb.disabled=true; }
+      else { sb.textContent="Couldn't save"; }
+    }); }
   }
 
   function renderPrep(d){
@@ -367,11 +420,148 @@
     finally{ busy(false); }
   }
 
-  // ---- handoff from the Job Tracker: prefill JD/resume + open the right tool ----
+  // ===================== LIVE VOICE INTERVIEW =====================
+  const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+  let live=null, rec=null, finalText="";
+  $("liveBtn").addEventListener("click",startLive);
+
+  function liveApi(url,body){
+    const token=(window.RF&&window.RF.token)||localStorage.getItem("rf_token")||"";
+    const clientId=localStorage.getItem("rf_client")||"";
+    return fetch(url,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({...body,token,clientId})})
+      .then(async r=>{ const d=await r.json().catch(()=>({})); if(!r.ok){ const e=new Error(d.error||"failed"); e.code=r.status; throw e; } return d; });
+  }
+  function speak(text,cb){
+    try{ window.speechSynthesis.cancel(); const u=new SpeechSynthesisUtterance(text); u.rate=1.03; u.onend=()=>cb&&cb(); window.speechSynthesis.speak(u); }
+    catch(_){ cb&&cb(); }
+  }
+
+  async function startLive(){
+    if(!needInputs())return;
+    if(!SpeechRec){ err.textContent="Live voice interviews need Chrome or Edge (your browser doesn't support speech recognition). Use the text interview instead."; return; }
+    err.textContent=""; result.classList.remove("on"); busy(true,"Setting up your live interview…");
+    let d;
+    try{ d=await liveApi("/api/interview/live-start",{jd:jd.value,resume:cv.value,stage:$("stageSel").value}); }
+    catch(e){ busy(false);
+      if(e.code===402){ window.RF.openPay(); return; }
+      if(e.code===429){ showProSoon(); return; }
+      err.textContent=e.message||"Couldn't start the live interview."; return;
+    }
+    busy(false);
+    live={ planned:d.questions, transcript:[], plannedIndex:0, turns:0, listening:false, finalizing:false, ending:false, remaining:d.remaining };
+    renderLiveUI();
+    const opener="Thanks for joining today. Let's get started. "+live.planned[0];
+    pushLine("interviewer",opener); speak(opener);
+  }
+
+  function renderLiveUI(){
+    show(`<div class="panelfull">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px">
+        <div class="muted">🎤 Live interview · ${live.planned.length} questions + follow-ups${typeof live.remaining==="number"?` · ${live.remaining} left today`:""}</div>
+        <button class="lite" id="endLive" style="background:#fff;border:1px solid var(--line);padding:8px 12px;border-radius:9px;font-weight:600;font-size:13px;cursor:pointer">End &amp; get feedback</button>
+      </div>
+      <div id="convo" style="margin-top:12px;display:flex;flex-direction:column;gap:10px;max-height:320px;overflow:auto;padding:4px"></div>
+      <div id="liveStatus" class="muted" style="margin-top:10px;min-height:18px"></div>
+      <div style="margin-top:10px;display:flex;gap:10px;align-items:center">
+        <button class="run" id="micBtn" style="background:var(--accent2)">🎤 Speak</button>
+        <span class="muted" id="interim" style="font-style:italic"></span>
+      </div>
+    </div>`);
+    $("micBtn").addEventListener("click",toggleMic);
+    $("endLive").addEventListener("click",()=>endLive());
+  }
+  function pushLine(role,text){
+    live.transcript.push({role,text});
+    const c=$("convo"); if(!c)return;
+    const me=role==="candidate";
+    const div=document.createElement("div");
+    div.style.cssText=`align-self:${me?"flex-end":"flex-start"};max-width:86%;background:${me?"var(--soft)":"#F0FDFA"};border:1px solid ${me?"#DDE0FB":"#CCFBF1"};border-radius:12px;padding:9px 12px;font-size:14px;line-height:1.45`;
+    div.innerHTML=`<div style="font-size:10.5px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:2px">${me?"You":"Interviewer"}</div>${esc(text)}`;
+    c.appendChild(div); c.scrollTop=c.scrollHeight;
+  }
+
+  function toggleMic(){
+    if(!live) return;
+    if(live.listening){ live.listening=false; $("micBtn").textContent="…sending"; try{rec.stop();}catch(_){ finalizeAnswer(); } }
+    else startMic();
+  }
+  function startMic(){
+    try{
+      window.speechSynthesis&&window.speechSynthesis.cancel();
+      rec=new SpeechRec(); rec.lang="en-US"; rec.interimResults=true; rec.continuous=true; finalText="";
+      rec.onresult=(e)=>{ let interim=""; for(let i=e.resultIndex;i<e.results.length;i++){ const t=e.results[i][0].transcript; if(e.results[i].isFinal) finalText+=t+" "; else interim+=t; } const el=$("interim"); if(el) el.textContent=interim; };
+      rec.onerror=(e)=>{ const el=$("liveStatus"); if(el) el.textContent="Mic issue: "+e.error+". Press Speak to retry."; };
+      rec.onend=()=>{ finalizeAnswer(); };
+      rec.start(); live.listening=true; $("micBtn").textContent="⏹ Stop & send"; $("liveStatus").textContent="Listening… speak your answer, then press Stop & send.";
+    }catch(e){ $("liveStatus").textContent="Couldn't start the microphone. Check permissions."; }
+  }
+  function finalizeAnswer(){
+    if(!live || live.finalizing) return; live.finalizing=true; live.listening=false;
+    const interim=$("interim")?$("interim").textContent.trim():"";
+    const answer=(finalText+" "+interim).trim(); finalText="";
+    if($("interim"))$("interim").textContent=""; if($("micBtn"))$("micBtn").textContent="🎤 Speak";
+    if(!answer){ live.finalizing=false; if($("liveStatus"))$("liveStatus").textContent="Didn't catch that — press Speak and try again."; return; }
+    pushLine("candidate",answer);
+    nextTurn();
+  }
+  async function nextTurn(){
+    if($("micBtn"))$("micBtn").disabled=true; if($("liveStatus"))$("liveStatus").textContent="Thinking…";
+    live.turns++;
+    const transcript=live.transcript.map(t=>(t.role==="candidate"?"Candidate":"Interviewer")+": "+t.text).join("\n");
+    try{
+      const d=await liveApi("/api/interview/live-turn",{jd:jd.value,resume:cv.value,planned:live.planned,transcript,plannedIndex:live.plannedIndex});
+      if(typeof d.nextIndex==="number") live.plannedIndex=d.nextIndex;
+      pushLine("interviewer",d.say||"");
+      speak(d.say||"");
+      live.finalizing=false;
+      if(d.done || live.turns>=14){ return endLive(); }
+    }catch(e){ if($("liveStatus"))$("liveStatus").textContent=(e.message||"Something went wrong")+" — press Speak to continue."; live.finalizing=false; }
+    if($("micBtn"))$("micBtn").disabled=false; if($("liveStatus"))$("liveStatus").textContent="Your turn — press Speak.";
+  }
+  async function endLive(){
+    if(!live || live.ending) return; live.ending=true;
+    try{ rec&&rec.stop(); }catch(_){}
+    window.speechSynthesis&&window.speechSynthesis.cancel();
+    const planned=live.planned, transcript=live.transcript.map(t=>(t.role==="candidate"?"Candidate":"Interviewer")+": "+t.text).join("\n");
+    const hasAnswers=live.transcript.some(t=>t.role==="candidate");
+    if(!hasAnswers){ live=null; selectTab("interview"); return; }
+    busy(true,"Scoring your interview…");
+    try{ const s=await liveApi("/api/interview/live-summary",{jd:jd.value,planned,transcript}); renderLiveReport(s); }
+    catch(e){ err.textContent="Couldn't score the interview. "+(e.message||""); }
+    busy(false); live=null;
+  }
+  function renderLiveReport(s){
+    const li=a=>(a||[]).map(x=>`<li>${esc(x)}</li>`).join("");
+    const pq=(s.perQuestion||[]).map(q=>`<div style="margin-top:10px"><b>${esc(q.question)}</b> <span class="muted">— ${q.score}/10</span><div class="muted">${esc(q.feedback)}</div></div>`).join("");
+    show(`<div class="panelfull">
+      <div class="scorebig">${s.overallScore}<small>/10 overall</small></div>
+      <div class="verdict">${esc(s.verdict||"")}</div>
+      <p class="muted" style="margin-top:8px">${esc(s.summary||"")}</p>
+      <h3 class="sec">Per-question feedback</h3>${pq||'<span class="muted">—</span>'}
+      <div class="twocol"><div><h3 class="sec">Top strengths</h3><ul class="list">${li(s.topStrengths)}</ul></div><div><h3 class="sec">Top improvements</h3><ul class="list">${li(s.topImprovements)}</ul></div></div>
+      <button class="run" id="liveAgain" style="margin-top:14px;background:var(--accent2)">🎤 Another live interview</button>
+    </div>`);
+    $("liveAgain").addEventListener("click",startLive);
+  }
+  function showProSoon(){
+    show(`<div class="panelfull" style="text-align:center">
+      <div style="font-size:32px">🎙️</div>
+      <h3 style="margin-top:8px;font-size:18px;font-weight:700">That's your 2 live interviews for today</h3>
+      <p class="muted" style="margin-top:6px">Live voice interviews are limited to 2 per day on your membership.</p>
+      <div style="margin-top:14px;display:inline-block;background:var(--soft);border:1px solid #DDE0FB;border-radius:12px;padding:14px 20px;text-align:left">
+        <b style="color:var(--accent)">RoleFit Pro — coming soon</b>
+        <div class="muted" style="margin-top:4px">Unlimited live voice interviews, and more.</div>
+      </div>
+      <p class="muted" style="margin-top:14px">Come back tomorrow for 2 more — or run a text interview now.</p>
+    </div>`);
+  }
+  // =================== END LIVE VOICE INTERVIEW ===================
+
   (function readPrefill(){
     let pf=null; try{ pf=JSON.parse(localStorage.getItem("rf_prefill")||"null"); }catch(_){}
     if(!pf) return;
     localStorage.removeItem("rf_prefill");
+    if(pf.appId){ linkedAppId=pf.appId; linkedAppCompany=pf.appCompany||"this"; $("linkCo").textContent=linkedAppCompany; $("linkBanner").style.display="flex"; }
     if(pf.jd) jd.value=pf.jd;
     if(pf.resume) cv.value=pf.resume;
     if(pf.tab){ selectTab(pf.tab); }

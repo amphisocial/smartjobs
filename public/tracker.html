@@ -217,7 +217,7 @@
 
   // hand an application into the toolkit with a tool/stage preselected
   function openTool(app, tab, stage, autostart){
-    localStorage.setItem("rf_prefill", JSON.stringify({ jd:app.jd, resume:app.resume, tab, stage:stage||"", autostart:!!autostart }));
+    localStorage.setItem("rf_prefill", JSON.stringify({ jd:app.jd, resume:app.resume, tab, stage:stage||"", autostart:!!autostart, appId:app.id, appCompany:app.company, appRole:app.role }));
     location.href="/candidate.html";
   }
 

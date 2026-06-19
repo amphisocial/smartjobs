@@ -12,7 +12,7 @@ import * as P from "./lib/prompts.js";
 import { buildResumePdf } from "./lib/pdf.js";
 import { initStore, ensureMember, getMemberByToken, setStatusByCustomer, getApplications, setApplications } from "./lib/store.js";
 import { createCheckoutSession, resolvePaidSession, constructWebhookEvent } from "./lib/billing.js";
-import { checkAndConsume } from "./lib/ratelimit.js";
+import { checkAndConsume, consumeLive } from "./lib/ratelimit.js";
 
 assertConfig();
 await initStore();
@@ -214,6 +214,38 @@ app.post("/api/ats", async (req, res) => { try { const { jd, resume } = req.body
 app.post("/api/training", async (req, res) => { try { const { jd, resume } = req.body || {}; if (!jd || !resume) return res.status(400).json({ error: "Paste both a job description and a resume." }); await gated(req, res, P.trainingPlan(jd, resume)); } catch (e) { errJson(res, e); } });
 app.post("/api/interview/start", async (req, res) => { try { const { jd, resume } = req.body || {}; if (!jd || !resume) return res.status(400).json({ error: "Paste both a job description and a resume." }); await gated(req, res, P.interviewQuestions(jd, resume)); } catch (e) { errJson(res, e); } });
 app.post("/api/interview/stage", async (req, res) => { try { const { jd, resume, stage } = req.body || {}; if (!jd || !resume) return res.status(400).json({ error: "Need the job description and your profile." }); await gated(req, res, P.stageInterview(jd, resume, stage || "recruiter")); } catch (e) { errJson(res, e); } });
+
+// --- LIVE voice interview (members only, 2/day; Pro = unlimited later) ---
+app.post("/api/interview/live-start", async (req, res) => {
+  try {
+    const { jd, resume, stage, token } = req.body || {};
+    if (!jd || !resume) return res.status(400).json({ error: "Need the job description and your resume." });
+    const m = token ? await getMemberByToken(String(token).trim()) : null;
+    const isMember = m && (m.status === "active" || m.status === "trialing");
+    if (!isMember) return res.status(402).json({ error: "paid_feature" });
+    const lc = consumeLive(String(token).trim(), 2);
+    if (!lc.allowed) return res.status(429).json({ error: "live_daily_limit", limit: lc.limit });
+    const spec = (stage && stage !== "general") ? P.stageInterview(jd, resume, stage) : P.interviewQuestions(jd, resume);
+    const out = await run(spec);
+    const questions = (out.questions || []).map(q => q.q).filter(Boolean).slice(0, 5);
+    if (!questions.length) throw new Error("Could not generate questions.");
+    res.json({ questions, remaining: lc.remaining });
+  } catch (e) { errJson(res, e); }
+});
+app.post("/api/interview/live-turn", async (req, res) => {
+  try {
+    const { jd, resume, planned, transcript, plannedIndex } = req.body || {};
+    if (!jd || !Array.isArray(planned)) return res.status(400).json({ error: "bad request" });
+    res.json(await run(P.liveTurn(jd, resume || "", planned, transcript || "", plannedIndex || 0)));
+  } catch (e) { errJson(res, e); }
+});
+app.post("/api/interview/live-summary", async (req, res) => {
+  try {
+    const { jd, planned, transcript } = req.body || {};
+    if (!jd || !transcript) return res.status(400).json({ error: "bad request" });
+    res.json(await run(P.liveSummary(jd, planned || [], transcript)));
+  } catch (e) { errJson(res, e); }
+});
 
 // --- interview follow-ons (free within a started session) ---
 app.post("/api/interview/feedback", async (req, res) => { try { const { jd, question, answer } = req.body || {}; if (!question || !answer) return res.status(400).json({ error: "Missing question or answer." }); res.json(await run(P.interviewFeedback(jd || "", question, answer))); } catch (e) { errJson(res, e); } });
