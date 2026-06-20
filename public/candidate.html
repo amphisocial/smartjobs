@@ -84,13 +84,11 @@
   .iv-stage{display:flex;flex-direction:column;align-items:center;text-align:center;padding:6px 0 4px}
   .iv-photo-wrap{position:relative;width:100%;max-width:360px;border-radius:16px;overflow:hidden;border:1px solid var(--line);box-shadow:0 14px 34px -18px rgba(15,23,42,.55)}
   .iv-photo{display:block;width:100%;height:auto}
-  /* talking-mouth overlay: same photo, masked to the mouth, animated while speaking */
-  .iv-mouth{position:absolute;inset:0;background-size:100% 100%;background-position:center;pointer-events:none;opacity:0;
-    -webkit-mask:radial-gradient(ellipse 15% 12% at var(--mx,50%) var(--my,40%), #000 45%, transparent 73%);
-    mask:radial-gradient(ellipse 15% 12% at var(--mx,50%) var(--my,40%), #000 45%, transparent 73%);
-    transform-origin:var(--mx,50%) calc(var(--my,40%) - 7%)}
-  .iv-stage.speaking .iv-mouth{opacity:1;animation:talk .5s ease-in-out infinite}
-  @keyframes talk{0%{transform:translateY(0) scaleY(1)}20%{transform:translateY(2px) scaleY(1.045)}40%{transform:translateY(.5px) scaleY(1.012)}60%{transform:translateY(2.6px) scaleY(1.055)}80%{transform:translateY(1px) scaleY(1.02)}100%{transform:translateY(0) scaleY(1)}}
+  /* optional 'mouth open' photo that swaps in while speaking (auto-used if the file exists) */
+  .iv-open{position:absolute;inset:0;width:100%;height:auto;opacity:0;pointer-events:none}
+  /* 'speaking' highlight ring around the active interviewer (always on while talking) */
+  .iv-stage.speaking .iv-photo-wrap{animation:spkpulse 1.5s ease-in-out infinite}
+  @keyframes spkpulse{0%,100%{box-shadow:0 0 0 0 rgba(14,165,164,0)}50%{box-shadow:0 0 0 5px rgba(14,165,164,.5)}}
   .iv-speak{display:flex;align-items:center;gap:7px;margin-top:12px;color:var(--muted);font-size:12.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em}
   .iv-speak svg{width:22px;height:22px}
   .iv-speak .wave{opacity:.22}
@@ -479,7 +477,16 @@
     return m||pool[0]||null;
   }
   const IV_IMG={ male:"/interviewer-male.jpg", female:"/interviewer-female.jpg" };
-  const IV_MOUTH={ male:{x:"50.3%",y:"40%"}, female:{x:"50%",y:"42%"} };
+  // Optional "mouth open" photos. If these files exist, the app swaps between the
+  // normal and open photo while speaking (real open/close). If absent, it just
+  // shows a speaking glow ring. Drop in interviewer-male-open.jpg / -female-open.jpg to enable.
+  const IV_IMG_OPEN={ male:"/interviewer-male-open.jpg", female:"/interviewer-female-open.jpg" };
+  const hasOpen={ male:false, female:false };
+  function preloadOpen(g){ const im=new Image(); im.onload=()=>{ hasOpen[g]=true; if(g===selectedInterviewer){ const o=$("ivOpen"); if(o) o.src=IV_IMG_OPEN[g]; } }; im.onerror=()=>{ hasOpen[g]=false; }; im.src=IV_IMG_OPEN[g]; }
+  preloadOpen("male"); preloadOpen("female");
+  let mouthTimer=null;
+  function startMouth(){ stopMouth(); if(!hasOpen[selectedInterviewer]) return; const o=$("ivOpen"); if(!o||!o.getAttribute("src")) return; (function tick(){ o.style.opacity = o.style.opacity==="1" ? "0" : "1"; mouthTimer=setTimeout(tick, 90+Math.random()*120); })(); }
+  function stopMouth(){ if(mouthTimer){ clearTimeout(mouthTimer); mouthTimer=null; } const o=$("ivOpen"); if(o) o.style.opacity="0"; }
   const SPEAKER_SVG=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6h4l5 4V5L8 9H4z" fill="currentColor" stroke="none"></path><path class="wave w1" d="M16 9a4 4 0 0 1 0 6"></path><path class="wave w2" d="M18.6 6.8a7.5 7.5 0 0 1 0 10.4"></path></svg>`;
   // interviewer toggle
   $("ivToggle").addEventListener("click",e=>{ const b=e.target.closest(".ivopt"); if(!b) return;
@@ -489,9 +496,7 @@
   });
   function applyInterviewerPhoto(){
     const img=$("ivPhoto"); if(img) img.src=IV_IMG[selectedInterviewer];
-    const mo=$("ivMouth"); if(mo){ const m=IV_MOUTH[selectedInterviewer];
-      mo.style.backgroundImage=`url('${IV_IMG[selectedInterviewer]}')`;
-      mo.style.setProperty("--mx",m.x); mo.style.setProperty("--my",m.y); }
+    const o=$("ivOpen"); if(o){ o.style.opacity="0"; if(hasOpen[selectedInterviewer]) o.src=IV_IMG_OPEN[selectedInterviewer]; else o.removeAttribute("src"); }
   }
   $("liveBtn").addEventListener("click",startLive);
 
@@ -510,12 +515,12 @@
       const u=new SpeechSynthesisUtterance(text);
       const v=pickVoice(selectedInterviewer); if(v) u.voice=v;
       u.rate=1.02; u.pitch = selectedInterviewer==="female" ? 1.06 : 0.92;
-      u.onstart=()=>setSpeaking(true);
-      u.onend=()=>{ setSpeaking(false); cb&&cb(); };
-      u.onerror=()=>{ setSpeaking(false); cb&&cb(); };
-      setSpeaking(true);
+      u.onstart=()=>{ setSpeaking(true); startMouth(); };
+      u.onend=()=>{ setSpeaking(false); stopMouth(); cb&&cb(); };
+      u.onerror=()=>{ setSpeaking(false); stopMouth(); cb&&cb(); };
+      setSpeaking(true); startMouth();
       window.speechSynthesis.speak(u);
-    }catch(_){ setSpeaking(false); cb&&cb(); }
+    }catch(_){ setSpeaking(false); stopMouth(); cb&&cb(); }
   }
 
   async function startLive(){
@@ -543,7 +548,7 @@
         <button class="lite" id="endLive" style="background:#fff;border:1px solid var(--line);padding:8px 12px;border-radius:9px;font-weight:600;font-size:13px;cursor:pointer">End &amp; get feedback</button>
       </div>
       <div class="iv-stage" id="ivStage">
-        <div class="iv-photo-wrap"><img class="iv-photo" id="ivPhoto" src="${IV_IMG[selectedInterviewer]}" alt="Your interviewer"/><div class="iv-mouth" id="ivMouth" style="background-image:url('${IV_IMG[selectedInterviewer]}');--mx:${IV_MOUTH[selectedInterviewer].x};--my:${IV_MOUTH[selectedInterviewer].y}"></div></div>
+        <div class="iv-photo-wrap"><img class="iv-photo" id="ivPhoto" src="${IV_IMG[selectedInterviewer]}" alt="Your interviewer"/><img class="iv-open" id="ivOpen" alt=""/></div>
         <div class="iv-speak" id="ivSpeak">${SPEAKER_SVG}<span class="iv-speaklbl">speaking…</span></div>
         <div class="iv-cap" id="ivCap">…</div>
         <button class="iv-replay" id="ivReplay">🔊 Replay question</button>
@@ -558,6 +563,7 @@
     $("micBtn").addEventListener("click",toggleMic);
     $("endLive").addEventListener("click",()=>endLive());
     $("ivReplay").addEventListener("click",()=>{ if(lastSpoken) speak(lastSpoken); });
+    applyInterviewerPhoto();
   }
   function pushLine(role,text){
     live.transcript.push({role,text});
@@ -611,6 +617,7 @@
     if(!live || live.ending) return; live.ending=true;
     try{ rec&&rec.stop(); }catch(_){}
     window.speechSynthesis&&window.speechSynthesis.cancel();
+    stopMouth(); setSpeaking(false);
     const planned=live.planned, transcript=live.transcript.map(t=>(t.role==="candidate"?"Candidate":"Interviewer")+": "+t.text).join("\n");
     const hasAnswers=live.transcript.some(t=>t.role==="candidate");
     if(!hasAnswers){ live=null; selectTab("interview"); return; }
