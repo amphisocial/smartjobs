@@ -82,8 +82,15 @@
   .ivopt{background:#fff;border:none;padding:8px 12px;font-family:inherit;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer}
   .ivopt.on{background:var(--accent2);color:#fff}
   .iv-stage{display:flex;flex-direction:column;align-items:center;text-align:center;padding:6px 0 4px}
-  .iv-photo-wrap{width:100%;max-width:360px;border-radius:16px;overflow:hidden;border:1px solid var(--line);box-shadow:0 14px 34px -18px rgba(15,23,42,.55)}
+  .iv-photo-wrap{position:relative;width:100%;max-width:360px;border-radius:16px;overflow:hidden;border:1px solid var(--line);box-shadow:0 14px 34px -18px rgba(15,23,42,.55)}
   .iv-photo{display:block;width:100%;height:auto}
+  /* talking-mouth overlay: same photo, masked to the mouth, animated while speaking */
+  .iv-mouth{position:absolute;inset:0;background-size:100% 100%;background-position:center;pointer-events:none;opacity:0;
+    -webkit-mask:radial-gradient(ellipse 15% 12% at var(--mx,50%) var(--my,40%), #000 45%, transparent 73%);
+    mask:radial-gradient(ellipse 15% 12% at var(--mx,50%) var(--my,40%), #000 45%, transparent 73%);
+    transform-origin:var(--mx,50%) calc(var(--my,40%) - 7%)}
+  .iv-stage.speaking .iv-mouth{opacity:1;animation:talk .5s ease-in-out infinite}
+  @keyframes talk{0%{transform:translateY(0) scaleY(1)}20%{transform:translateY(2px) scaleY(1.045)}40%{transform:translateY(.5px) scaleY(1.012)}60%{transform:translateY(2.6px) scaleY(1.055)}80%{transform:translateY(1px) scaleY(1.02)}100%{transform:translateY(0) scaleY(1)}}
   .iv-speak{display:flex;align-items:center;gap:7px;margin-top:12px;color:var(--muted);font-size:12.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em}
   .iv-speak svg{width:22px;height:22px}
   .iv-speak .wave{opacity:.22}
@@ -472,13 +479,20 @@
     return m||pool[0]||null;
   }
   const IV_IMG={ male:"/interviewer-male.jpg", female:"/interviewer-female.jpg" };
+  const IV_MOUTH={ male:{x:"50.3%",y:"40%"}, female:{x:"50%",y:"42%"} };
   const SPEAKER_SVG=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6h4l5 4V5L8 9H4z" fill="currentColor" stroke="none"></path><path class="wave w1" d="M16 9a4 4 0 0 1 0 6"></path><path class="wave w2" d="M18.6 6.8a7.5 7.5 0 0 1 0 10.4"></path></svg>`;
   // interviewer toggle
   $("ivToggle").addEventListener("click",e=>{ const b=e.target.closest(".ivopt"); if(!b) return;
     selectedInterviewer=b.dataset.iv;
     [...$("ivToggle").children].forEach(x=>x.classList.toggle("on",x===b));
-    const img=$("ivPhoto"); if(img) img.src=IV_IMG[selectedInterviewer];
+    applyInterviewerPhoto();
   });
+  function applyInterviewerPhoto(){
+    const img=$("ivPhoto"); if(img) img.src=IV_IMG[selectedInterviewer];
+    const mo=$("ivMouth"); if(mo){ const m=IV_MOUTH[selectedInterviewer];
+      mo.style.backgroundImage=`url('${IV_IMG[selectedInterviewer]}')`;
+      mo.style.setProperty("--mx",m.x); mo.style.setProperty("--my",m.y); }
+  }
   $("liveBtn").addEventListener("click",startLive);
 
   function liveApi(url,body){
@@ -529,7 +543,7 @@
         <button class="lite" id="endLive" style="background:#fff;border:1px solid var(--line);padding:8px 12px;border-radius:9px;font-weight:600;font-size:13px;cursor:pointer">End &amp; get feedback</button>
       </div>
       <div class="iv-stage" id="ivStage">
-        <div class="iv-photo-wrap"><img class="iv-photo" id="ivPhoto" src="${IV_IMG[selectedInterviewer]}" alt="Your interviewer"/></div>
+        <div class="iv-photo-wrap"><img class="iv-photo" id="ivPhoto" src="${IV_IMG[selectedInterviewer]}" alt="Your interviewer"/><div class="iv-mouth" id="ivMouth" style="background-image:url('${IV_IMG[selectedInterviewer]}');--mx:${IV_MOUTH[selectedInterviewer].x};--my:${IV_MOUTH[selectedInterviewer].y}"></div></div>
         <div class="iv-speak" id="ivSpeak">${SPEAKER_SVG}<span class="iv-speaklbl">speaking…</span></div>
         <div class="iv-cap" id="ivCap">…</div>
         <button class="iv-replay" id="ivReplay">🔊 Replay question</button>
