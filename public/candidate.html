@@ -452,6 +452,25 @@
   let live=null, rec=null, finalText="", lastSpoken="", selectedInterviewer="male", liveLimit=2;
   // pull the configured live-interview daily limit so the UI matches the server
   fetch("/api/config").then(r=>r.json()).then(d=>{ if(d&&d.liveDailyLimit){ liveLimit=d.liveDailyLimit; const t=$("liveLimitTxt"); if(t) t.textContent=d.liveDailyLimit; } }).catch(()=>{});
+
+  // --- pick a male/female TTS voice to match the chosen interviewer ---
+  let voicesList=[];
+  function loadVoices(){ try{ voicesList=window.speechSynthesis.getVoices()||[]; }catch(_){ voicesList=[]; } }
+  loadVoices();
+  try{ window.speechSynthesis.onvoiceschanged=loadVoices; }catch(_){}
+  const FEMALE_NAMES=["zira","samantha","victoria","karen","moira","tessa","fiona","susan","serena","allison","ava","kate","catherine","linda","heather","amelie","joanna","salli","kendra","kimberly","sarah","sara","emma","sophie","hazel","eva","nicky","aria","jenny","michelle"];
+  const MALE_NAMES=["david","daniel","alex","fred","mark","george","james","tom","oliver","aaron","arthur","matthew","brian","guy","ryan","paul","richard","diego","jorge","liam","william"];
+  function isFemaleName(n){ return n.includes("female") || FEMALE_NAMES.some(h=>n.includes(h)); }
+  function isMaleName(n){ return (n.includes("male") && !n.includes("female")) || MALE_NAMES.some(h=>n.includes(h)); }
+  function pickVoice(gender){
+    if(!voicesList.length) loadVoices();
+    const en=voicesList.filter(v=>/^en/i.test(v.lang||""));
+    const pool=en.length?en:voicesList;
+    const wantFemale=gender==="female";
+    let m=pool.find(v=>{ const n=(v.name||"").toLowerCase(); return wantFemale?isFemaleName(n):isMaleName(n); });
+    if(!m) m=pool.find(v=>{ const n=(v.name||"").toLowerCase(); return wantFemale?!isMaleName(n):!isFemaleName(n); });
+    return m||pool[0]||null;
+  }
   const IV_IMG={ male:"/interviewer-male.jpg", female:"/interviewer-female.jpg" };
   const SPEAKER_SVG=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6h4l5 4V5L8 9H4z" fill="currentColor" stroke="none"></path><path class="wave w1" d="M16 9a4 4 0 0 1 0 6"></path><path class="wave w2" d="M18.6 6.8a7.5 7.5 0 0 1 0 10.4"></path></svg>`;
   // interviewer toggle
@@ -474,7 +493,9 @@
     const cap=$("ivCap"); if(cap) cap.textContent=text||"";
     try{
       window.speechSynthesis.cancel();
-      const u=new SpeechSynthesisUtterance(text); u.rate=1.02; u.pitch=1;
+      const u=new SpeechSynthesisUtterance(text);
+      const v=pickVoice(selectedInterviewer); if(v) u.voice=v;
+      u.rate=1.02; u.pitch = selectedInterviewer==="female" ? 1.06 : 0.92;
       u.onstart=()=>setSpeaking(true);
       u.onend=()=>{ setSpeaking(false); cb&&cb(); };
       u.onerror=()=>{ setSpeaking(false); cb&&cb(); };
