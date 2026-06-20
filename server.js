@@ -43,7 +43,7 @@ app.use((req, res, next) => { if (req.path === "/" || req.path.endsWith(".html")
 app.use(express.static(path.join(__dirname, "public")));
 
 app.get("/healthz", (_req, res) => res.json({ ok: true, provider: activeProvider(), billing: billingEnabled(), stripeMode: config.stripe.mode }));
-app.get("/api/config", (_req, res) => res.json({ billingEnabled: billingEnabled() }));
+app.get("/api/config", (_req, res) => res.json({ billingEnabled: billingEnabled(), liveDailyLimit: config.liveDailyLimit, freeDailyLimit: config.freeDailyLimit }));
 
 // --- entitlement gate: members are unlimited; everyone else has a daily cap ---
 async function gate(req, res) {
@@ -223,13 +223,13 @@ app.post("/api/interview/live-start", async (req, res) => {
     const m = token ? await getMemberByToken(String(token).trim()) : null;
     const isMember = m && (m.status === "active" || m.status === "trialing");
     if (!isMember) return res.status(402).json({ error: "paid_feature" });
-    const lc = consumeLive(String(token).trim(), 2);
+    const lc = consumeLive(String(token).trim(), config.liveDailyLimit);
     if (!lc.allowed) return res.status(429).json({ error: "live_daily_limit", limit: lc.limit });
     const spec = (stage && stage !== "general") ? P.stageInterview(jd, resume, stage) : P.interviewQuestions(jd, resume);
     const out = await run(spec);
     const questions = (out.questions || []).map(q => q.q).filter(Boolean).slice(0, 5);
     if (!questions.length) throw new Error("Could not generate questions.");
-    res.json({ questions, remaining: lc.remaining });
+    res.json({ questions, remaining: lc.remaining, limit: lc.limit });
   } catch (e) { errJson(res, e); }
 });
 app.post("/api/interview/live-turn", async (req, res) => {

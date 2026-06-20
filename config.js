@@ -25,6 +25,9 @@ export const config = {
   // How many free AI "runs" per visitor per day before the paywall.
   freeDailyLimit: parseInt(process.env.FREE_DAILY_LIMIT || "3", 10),
 
+  // How many LIVE voice interviews a paid member can run per day (Pro = unlimited later).
+  liveDailyLimit: Math.max(1, parseInt(process.env.LIVE_DAILY_LIMIT || "2", 10) || 2),
+
   openai: {
     apiKey: process.env.OPENAI_API_KEY || "",
     model: process.env.OPENAI_MODEL || "gpt-4o",

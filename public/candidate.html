@@ -178,7 +178,7 @@
         </div>
       </div>
       <button class="run" id="liveBtn" style="background:var(--accent2)">🎤 Live voice interview <span style="font-size:11px;background:rgba(255,255,255,.25);padding:2px 8px;border-radius:10px;margin-left:6px;vertical-align:middle">Paid</span></button>
-      <div class="sub" style="margin-top:7px;font-size:12px">Speak your answers out loud — the AI talks back, asks follow-ups, then scores you. 2 per day on a membership · <b>Pro (unlimited) coming soon</b>. Works best in Chrome or Edge.</div>
+      <div class="sub" style="margin-top:7px;font-size:12px">Speak your answers out loud — the AI talks back, asks follow-ups, then scores you. <span id="liveLimitTxt">2</span> per day on a membership · <b>Pro (unlimited) coming soon</b>. Works best in Chrome or Edge.</div>
     </div>
     <div class="loading" id="loading"><div class="spin"></div><span id="loadingTxt">Working…</span></div>
     <div class="err" id="err"></div>
@@ -449,7 +449,9 @@
 
   // ===================== LIVE VOICE INTERVIEW =====================
   const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
-  let live=null, rec=null, finalText="", lastSpoken="", selectedInterviewer="male";
+  let live=null, rec=null, finalText="", lastSpoken="", selectedInterviewer="male", liveLimit=2;
+  // pull the configured live-interview daily limit so the UI matches the server
+  fetch("/api/config").then(r=>r.json()).then(d=>{ if(d&&d.liveDailyLimit){ liveLimit=d.liveDailyLimit; const t=$("liveLimitTxt"); if(t) t.textContent=d.liveDailyLimit; } }).catch(()=>{});
   const IV_IMG={ male:"/interviewer-male.jpg", female:"/interviewer-female.jpg" };
   const SPEAKER_SVG=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6h4l5 4V5L8 9H4z" fill="currentColor" stroke="none"></path><path class="wave w1" d="M16 9a4 4 0 0 1 0 6"></path><path class="wave w2" d="M18.6 6.8a7.5 7.5 0 0 1 0 10.4"></path></svg>`;
   // interviewer toggle
@@ -464,7 +466,7 @@
     const token=(window.RF&&window.RF.token)||localStorage.getItem("rf_token")||"";
     const clientId=localStorage.getItem("rf_client")||"";
     return fetch(url,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({...body,token,clientId})})
-      .then(async r=>{ const d=await r.json().catch(()=>({})); if(!r.ok){ const e=new Error(d.error||"failed"); e.code=r.status; throw e; } return d; });
+      .then(async r=>{ const d=await r.json().catch(()=>({})); if(!r.ok){ const e=new Error(d.error||"failed"); e.code=r.status; e.body=d; throw e; } return d; });
   }
   function setSpeaking(on){ const s=$("ivStage"); if(s) s.classList.toggle("speaking",!!on); }
   function speak(text,cb){
@@ -489,7 +491,7 @@
     try{ d=await liveApi("/api/interview/live-start",{jd:jd.value,resume:cv.value,stage:$("stageSel").value}); }
     catch(e){ busy(false);
       if(e.code===402){ window.RF.openPay(); return; }
-      if(e.code===429){ showProSoon(); return; }
+      if(e.code===429){ showProSoon(e.body&&e.body.limit); return; }
       err.textContent=e.message||"Couldn't start the live interview."; return;
     }
     busy(false);
@@ -595,16 +597,17 @@
     </div>`);
     $("liveAgain").addEventListener("click",startLive);
   }
-  function showProSoon(){
+  function showProSoon(limit){
+    const n=limit||liveLimit||2;
     show(`<div class="panelfull" style="text-align:center">
       <div style="font-size:32px">🎙️</div>
-      <h3 style="margin-top:8px;font-size:18px;font-weight:700">That's your 2 live interviews for today</h3>
-      <p class="muted" style="margin-top:6px">Live voice interviews are limited to 2 per day on your membership.</p>
+      <h3 style="margin-top:8px;font-size:18px;font-weight:700">That's your ${n} live interview${n===1?"":"s"} for today</h3>
+      <p class="muted" style="margin-top:6px">Live voice interviews are limited to ${n} per day on your membership.</p>
       <div style="margin-top:14px;display:inline-block;background:var(--soft);border:1px solid #DDE0FB;border-radius:12px;padding:14px 20px;text-align:left">
         <b style="color:var(--accent)">RoleFit Pro — coming soon</b>
         <div class="muted" style="margin-top:4px">Unlimited live voice interviews, and more.</div>
       </div>
-      <p class="muted" style="margin-top:14px">Come back tomorrow for 2 more — or run a text interview now.</p>
+      <p class="muted" style="margin-top:14px">Come back tomorrow${n===1?"":" for more"} — or run a text interview now.</p>
     </div>`);
   }
   // =================== END LIVE VOICE INTERVIEW ===================
