@@ -45,6 +45,7 @@ Which AI runs cost a credit: `/api/fit`, `/api/ats`, `/api/training`, `/api/inte
 
 ## Live voice interview (paid, 2/day; Pro = unlimited soon)
 A spoken interview: the AI asks questions aloud, the candidate answers by voice, and the AI follows up conversationally before scoring at the end.
+- **Interviewer:** male/female toggle (David / Sarah) shows a photo that flickers a speaker icon while speaking.
 - **Voice:** browser Web Speech API — `speechSynthesis` (AI speaks) + `SpeechRecognition` (candidate's mic → text). No audio leaves the browser; zero extra per-minute cost. Best in Chrome/Edge; other browsers are told to use the text interview. Server-side Whisper is the natural Pro upgrade.
 - **Flow:** `/api/interview/live-start` (members only — 402 for free users → paywall; capped 2/day → 429 → "Pro coming soon") returns 5 planned questions. `/api/interview/live-turn` decides each next spoken line (follow-up vs next question) from the running transcript. `/api/interview/live-summary` scores each answer + overall at the end, like the text mock.
 - The 2/day cap is in-memory (`consumeLive`), keyed by member token; it resets on redeploy. Move to Postgres if you need it to survive deploys.

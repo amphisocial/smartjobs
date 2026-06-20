@@ -76,6 +76,26 @@
   .pill.call{background:#ECFDF5;color:#047857}
   .pill.maybe{background:#FFFBEB;color:#B45309}
   .pill.pass{background:#FEF2F2;color:#B91C1C}
+
+  /* live interview: interviewer photo + speaking indicator */
+  .ivtoggle{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+  .ivopt{background:#fff;border:none;padding:8px 12px;font-family:inherit;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer}
+  .ivopt.on{background:var(--accent2);color:#fff}
+  .iv-stage{display:flex;flex-direction:column;align-items:center;text-align:center;padding:6px 0 4px}
+  .iv-photo-wrap{width:100%;max-width:360px;border-radius:16px;overflow:hidden;border:1px solid var(--line);box-shadow:0 14px 34px -18px rgba(15,23,42,.55)}
+  .iv-photo{display:block;width:100%;height:auto}
+  .iv-speak{display:flex;align-items:center;gap:7px;margin-top:12px;color:var(--muted);font-size:12.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em}
+  .iv-speak svg{width:22px;height:22px}
+  .iv-speak .wave{opacity:.22}
+  .iv-speaklbl{visibility:hidden}
+  .iv-stage.speaking .iv-speak{color:var(--accent2)}
+  .iv-stage.speaking .iv-speak .wave{animation:flick .5s steps(2,end) infinite}
+  .iv-stage.speaking .iv-speak .w2{animation-delay:.16s}
+  .iv-stage.speaking .iv-speaklbl{visibility:visible}
+  @keyframes flick{0%{opacity:.2}50%{opacity:1}100%{opacity:.2}}
+  .iv-cap{font-size:15px;margin-top:11px;max-width:540px;line-height:1.5;color:var(--ink);font-weight:500}
+  .iv-replay{margin-top:10px;background:#fff;border:1px solid var(--line);color:var(--ink);padding:7px 13px;border-radius:9px;font-size:12.5px;cursor:pointer;font-weight:600}
+  .iv-replay:hover{border-color:var(--accent2)}
 </style>
 </head>
 <body>
@@ -150,6 +170,13 @@
     <button class="run" id="runBtn">Analyze fit</button>
 
     <div id="liveWrap" style="display:none;margin-top:12px">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:11px;flex-wrap:wrap">
+        <span style="font-size:13px;font-weight:600">Interviewer</span>
+        <div class="ivtoggle" id="ivToggle">
+          <button class="ivopt on" data-iv="male" type="button">👨 David</button>
+          <button class="ivopt" data-iv="female" type="button">👩 Sarah</button>
+        </div>
+      </div>
       <button class="run" id="liveBtn" style="background:var(--accent2)">🎤 Live voice interview <span style="font-size:11px;background:rgba(255,255,255,.25);padding:2px 8px;border-radius:10px;margin-left:6px;vertical-align:middle">Paid</span></button>
       <div class="sub" style="margin-top:7px;font-size:12px">Speak your answers out loud — the AI talks back, asks follow-ups, then scores you. 2 per day on a membership · <b>Pro (unlimited) coming soon</b>. Works best in Chrome or Edge.</div>
     </div>
@@ -422,7 +449,15 @@
 
   // ===================== LIVE VOICE INTERVIEW =====================
   const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
-  let live=null, rec=null, finalText="";
+  let live=null, rec=null, finalText="", lastSpoken="", selectedInterviewer="male";
+  const IV_IMG={ male:"/interviewer-male.jpg", female:"/interviewer-female.jpg" };
+  const SPEAKER_SVG=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6h4l5 4V5L8 9H4z" fill="currentColor" stroke="none"></path><path class="wave w1" d="M16 9a4 4 0 0 1 0 6"></path><path class="wave w2" d="M18.6 6.8a7.5 7.5 0 0 1 0 10.4"></path></svg>`;
+  // interviewer toggle
+  $("ivToggle").addEventListener("click",e=>{ const b=e.target.closest(".ivopt"); if(!b) return;
+    selectedInterviewer=b.dataset.iv;
+    [...$("ivToggle").children].forEach(x=>x.classList.toggle("on",x===b));
+    const img=$("ivPhoto"); if(img) img.src=IV_IMG[selectedInterviewer];
+  });
   $("liveBtn").addEventListener("click",startLive);
 
   function liveApi(url,body){
@@ -431,9 +466,19 @@
     return fetch(url,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({...body,token,clientId})})
       .then(async r=>{ const d=await r.json().catch(()=>({})); if(!r.ok){ const e=new Error(d.error||"failed"); e.code=r.status; throw e; } return d; });
   }
+  function setSpeaking(on){ const s=$("ivStage"); if(s) s.classList.toggle("speaking",!!on); }
   function speak(text,cb){
-    try{ window.speechSynthesis.cancel(); const u=new SpeechSynthesisUtterance(text); u.rate=1.03; u.onend=()=>cb&&cb(); window.speechSynthesis.speak(u); }
-    catch(_){ cb&&cb(); }
+    lastSpoken=text||"";
+    const cap=$("ivCap"); if(cap) cap.textContent=text||"";
+    try{
+      window.speechSynthesis.cancel();
+      const u=new SpeechSynthesisUtterance(text); u.rate=1.02; u.pitch=1;
+      u.onstart=()=>setSpeaking(true);
+      u.onend=()=>{ setSpeaking(false); cb&&cb(); };
+      u.onerror=()=>{ setSpeaking(false); cb&&cb(); };
+      setSpeaking(true);
+      window.speechSynthesis.speak(u);
+    }catch(_){ setSpeaking(false); cb&&cb(); }
   }
 
   async function startLive(){
@@ -460,7 +505,13 @@
         <div class="muted">🎤 Live interview · ${live.planned.length} questions + follow-ups${typeof live.remaining==="number"?` · ${live.remaining} left today`:""}</div>
         <button class="lite" id="endLive" style="background:#fff;border:1px solid var(--line);padding:8px 12px;border-radius:9px;font-weight:600;font-size:13px;cursor:pointer">End &amp; get feedback</button>
       </div>
-      <div id="convo" style="margin-top:12px;display:flex;flex-direction:column;gap:10px;max-height:320px;overflow:auto;padding:4px"></div>
+      <div class="iv-stage" id="ivStage">
+        <div class="iv-photo-wrap"><img class="iv-photo" id="ivPhoto" src="${IV_IMG[selectedInterviewer]}" alt="Your interviewer"/></div>
+        <div class="iv-speak" id="ivSpeak">${SPEAKER_SVG}<span class="iv-speaklbl">speaking…</span></div>
+        <div class="iv-cap" id="ivCap">…</div>
+        <button class="iv-replay" id="ivReplay">🔊 Replay question</button>
+      </div>
+      <div id="convo" style="margin-top:14px;display:flex;flex-direction:column;gap:10px;max-height:240px;overflow:auto;padding:4px"></div>
       <div id="liveStatus" class="muted" style="margin-top:10px;min-height:18px"></div>
       <div style="margin-top:10px;display:flex;gap:10px;align-items:center">
         <button class="run" id="micBtn" style="background:var(--accent2)">🎤 Speak</button>
@@ -469,6 +520,7 @@
     </div>`);
     $("micBtn").addEventListener("click",toggleMic);
     $("endLive").addEventListener("click",()=>endLive());
+    $("ivReplay").addEventListener("click",()=>{ if(lastSpoken) speak(lastSpoken); });
   }
   function pushLine(role,text){
     live.transcript.push({role,text});
