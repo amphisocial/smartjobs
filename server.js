@@ -74,7 +74,12 @@ function errJson(res, err) {
 app.post("/api/checkout", async (req, res) => {
   if (!billingEnabled()) return res.status(503).json({ error: "billing_not_configured" });
   try { res.json({ url: await createCheckoutSession(`${req.protocol}://${req.get("host")}`) }); }
-  catch (e) { console.error("[checkout]", e.message); res.status(500).json({ error: "Could not start checkout." }); }
+  catch (e) {
+    const stripe = e.raw || {};
+    console.error("[checkout] message:", e.message);
+    console.error("[checkout] stripe:", JSON.stringify({ type: e.type, code: e.code, decline_code: e.decline_code, param: e.param, status: e.statusCode, detail: stripe.message || "" }));
+    res.status(500).json({ error: "Could not start checkout.", detail: e.message });
+  }
 });
 app.get("/api/claim", async (req, res) => {
   if (!billingEnabled()) return res.status(503).json({ error: "billing_not_configured" });
