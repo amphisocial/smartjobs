@@ -160,6 +160,7 @@
       <button class="tab" data-t="ats">ATS resume</button>
       <button class="tab" data-t="prep">Prep plan</button>
       <button class="tab" data-t="interview">Mock interview</button>
+      <button class="uploadbtn" id="refreshSession" type="button" style="margin-left:8px">↻ Refresh</button>
     </div>
 
     <div id="stageWrap" style="display:none;margin-bottom:14px">
@@ -199,15 +200,130 @@
   let tab="fit";
   let linkedAppId=null, linkedAppCompany="";
   const TAB_LABEL={fit:"Analyze fit",ats:"Optimize resume",prep:"Build prep plan",interview:"Start mock interview"};
+  const SESSION_KEY = "rf_candidate_input_session_v1";
+let restoringCachedTab = false;
+
+function norm(s){ return String(s || "").trim(); }
+
+function fingerprint(){
+  const j = norm(jd.value), r = norm(cv.value);
+  if(!j || !r) return "";
+  let s = j + "\n---ROLEFIT-INPUT---\n" + r;
+  let h = 2166136261;
+  for(let i=0;i<s.length;i++){ h ^= s.charCodeAt(i); h = Math.imul(h,16777619); }
+  return (h >>> 0).toString(36);
+}
+
+function readSession(){
+  try { return JSON.parse(sessionStorage.getItem(SESSION_KEY) || "null"); }
+  catch(_) { return null; }
+}
+
+function writeSession(s){
+  try { sessionStorage.setItem(SESSION_KEY, JSON.stringify(s)); }
+  catch(_) {}
+}
+
+function currentSession(create=false){
+  const key = fingerprint();
+  if(!key) return null;
+
+  let s = readSession();
+  if(!s || s.key !== key){
+    if(!create) return null;
+    s = { key, inputs:{ jd:norm(jd.value), resume:norm(cv.value) }, outputs:{}, activeTab:tab, updatedAt:Date.now() };
+  }
+
+  s.inputs = { jd:norm(jd.value), resume:norm(cv.value) };
+  s.activeTab = tab;
+  s.updatedAt = Date.now();
+  return s;
+}
+
+function cacheTabOutput(tabName, data){
+  if(restoringCachedTab) return;
+  const s = currentSession(true);
+  if(!s) return;
+  s.outputs[tabName] = { data, savedAt:Date.now() };
+  writeSession(s);
+}
+
+function clearDisplayedResult(){
+  result.classList.remove("on");
+  result.innerHTML = "";
+}
+
+function restoreCachedTab(tabName){
+  const s = currentSession(false);
+  const cached = s?.outputs?.[tabName]?.data;
+  if(!cached) return false;
+
+  restoringCachedTab = true;
+  try{
+    if(tabName === "fit") renderFit(cached);
+    else if(tabName === "ats") renderAts(cached);
+    else if(tabName === "prep") renderPrep(cached);
+    else if(tabName === "interview"){
+      if(cached.summary){
+        renderInterviewSummary(cached.summary);
+      } else if(cached.iv){
+        iv = cached.iv;
+        renderQuestion();
+      } else {
+        return false;
+      }
+    } else {
+      return false;
+    }
+    return true;
+  } finally {
+    restoringCachedTab = false;
+  }
+}
+
+function resetCandidateSession(clearInputs=true){
+  sessionStorage.removeItem(SESSION_KEY);
+  if(clearInputs){
+    jd.value = "";
+    cv.value = "";
+  }
+  err.textContent = "";
+  clearDisplayedResult();
+  selectTab("fit");
+  jd.focus();
+}
+
+function invalidateIfInputsChanged(){
+  const key = fingerprint();
+  if(!key) return;
+
+  const s = readSession();
+  if(s && s.key !== key){
+    sessionStorage.removeItem(SESSION_KEY);
+    err.textContent = "";
+    clearDisplayedResult();
+  }
+}
+
+jd.addEventListener("input", invalidateIfInputsChanged);
+cv.addEventListener("input", invalidateIfInputsChanged);
 
   // tab switching
   function selectTab(t){
-    [...$("tabs").children].forEach(x=>x.classList.toggle("on",x.dataset.t===t));
-    tab=t; $("runBtn").textContent=TAB_LABEL[tab];
-    $("stageWrap").style.display = (tab==="interview") ? "block" : "none";
-    $("liveWrap").style.display = (tab==="interview") ? "block" : "none";
-    result.classList.remove("on"); result.innerHTML=""; err.textContent="";
+  [...$("tabs").children].forEach(x=>x.classList.toggle("on",x.dataset.t===t));
+  tab=t; 
+  $("runBtn").textContent=TAB_LABEL[tab];
+  $("stageWrap").style.display = (tab==="interview") ? "block" : "none";
+  $("liveWrap").style.display = (tab==="interview") ? "block" : "none";
+  err.textContent="";
+
+  if(!restoreCachedTab(tab)){
+    clearDisplayedResult();
   }
+
+  const s = currentSession(false);
+  if(s){ s.activeTab = tab; writeSession(s); }
+}
   $("tabs").addEventListener("click",e=>{const b=e.target.closest(".tab");if(!b)return;selectTab(b.dataset.t);});
 
   // screenshot OCR -> textarea
@@ -262,6 +378,11 @@
 
   function needInputs(){ if(!jd.value.trim()||!cv.value.trim()){err.textContent="Paste both a job description and your resume first.";return false;} err.textContent=""; return true; }
   function busy(on,txt){ $("runBtn").disabled=on; loading.classList.toggle("on",on); if(txt)$("loadingTxt").textContent=txt; }
+  $("refreshSession").addEventListener("click",()=>{
+  if(confirm("Clear this job description, resume, and generated tab results?")){
+    resetCandidateSession(true);
+  }
+});
   async function post(url,body){ return window.RF.post(url,body); }
   function esc(s){return String(s==null?"":s).replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));}
 
@@ -297,20 +418,25 @@
   });
 
   $("runBtn").addEventListener("click",async()=>{
-    if(tab==="interview"){ return startInterview(); }
-    if(!needInputs())return;
-    busy(true,"Analyzing…"); err.textContent=""; result.classList.remove("on");
-    try{
-      if(tab==="fit") renderFit(await post("/api/fit",{jd:jd.value,resume:cv.value}));
-      else if(tab==="ats") renderAts(await post("/api/ats",{jd:jd.value,resume:cv.value}));
-      else if(tab==="prep") renderPrep(await post("/api/training",{jd:jd.value,resume:cv.value}));
-    }catch(e){ err.textContent=e.message; }
-    finally{ busy(false); }
-  });
+  if(!needInputs()) return;
 
+  if(restoreCachedTab(tab)) return;
+
+  if(tab==="interview"){ return startInterview(); }
+
+  busy(true,"Analyzing…"); err.textContent=""; result.classList.remove("on");
+  try{
+    if(tab==="fit") renderFit(await post("/api/fit",{jd:jd.value,resume:cv.value}));
+    else if(tab==="ats") renderAts(await post("/api/ats",{jd:jd.value,resume:cv.value}));
+    else if(tab==="prep") renderPrep(await post("/api/training",{jd:jd.value,resume:cv.value}));
+  }catch(e){ err.textContent=e.message; }
+  finally{ busy(false); }
+});
+  
   function show(html){ result.innerHTML=html; result.classList.add("on"); }
 
   function renderFit(d){
+    cacheTabOutput("fit", d);
     const matched=(d.matchedKeywords||[]).map(k=>`<span class="chip ok">${esc(k)}</span>`).join("");
     const missing=(d.missingKeywords||[]).map(k=>`<span class="chip miss">${esc(k)}</span>`).join("");
     const li=a=>(a||[]).map(x=>`<li>${esc(x)}</li>`).join("");
@@ -329,6 +455,7 @@
 
   let atsResumeData=null;
   function renderAts(d){
+    cacheTabOutput("ats", d);
     atsResumeData=d.resume||{};
     const r=atsResumeData;
     const exp=(r.experience||[]).map(e=>`<div style="margin-top:8px"><b>${esc(e.title)}${e.company?" — "+esc(e.company):""}</b><div class="muted">${esc([e.location,e.dates].filter(Boolean).join(" | "))}</div><ul class="list" style="margin-top:5px">${(e.bullets||[]).map(b=>`<li>${esc(b)}</li>`).join("")}</ul></div>`).join("");
@@ -370,6 +497,7 @@
   }
 
   function renderPrep(d){
+    cacheTabOutput("prep", d);
     const fa=(d.focusAreas||[]).map(f=>`<li><b>${esc(f.topic)}</b> — ${esc(f.why)}<div class="muted">${esc(f.howToPrepare)}</div></li>`).join("");
     const li=a=>(a||[]).map(x=>`<li>${esc(x)}</li>`).join("");
     show(`<div class="panelfull">
@@ -386,6 +514,7 @@
   // ---- Mock interview (text, stage-aware) ----
   let iv={questions:[],idx:0,qa:[],intro:"",stageLabel:""};
   async function startInterview(){
+      cacheTabOutput("interview", { iv });
     if(!needInputs())return;
     const stage=$("stageSel").value;
     busy(true,"Preparing your interview…"); err.textContent=""; result.classList.remove("on");
@@ -400,6 +529,7 @@
     finally{ busy(false); }
   }
   function renderQuestion(){
+    cacheTabOutput("interview", { iv });
     const q=iv.questions[iv.idx];
     const introBlock = (iv.idx===0 && iv.intro) ? `<div class="qbox" style="background:#fff"><div class="qmeta">${esc(iv.stageLabel||"Interviewer")}</div><div style="font-size:14.5px;margin-top:4px">${esc(iv.intro)}</div></div>` : "";
     show(`<div class="panelfull">
@@ -429,7 +559,7 @@
         <button class="run" id="nextBtn" style="margin-top:12px">${iv.idx<iv.questions.length-1?"Next question →":"Finish & get summary"}</button>
       </div>`;
       $("ans").disabled=true; $("ansBtn").style.display="none";
-      $("nextBtn").addEventListener("click",()=>{ if(iv.idx<iv.questions.length-1){iv.idx++;renderQuestion();}else{finishInterview();} });
+      $("nextBtn").addEventListener("click",()=>{ if(iv.idx<iv.questions.length-1){iv.idx++;cacheTabOutput("interview", { iv });renderQuestion();}else{finishInterview();} });
     }catch(e){ $("fbArea").innerHTML=`<div class="err">${esc(e.message)}</div>`; $("ansBtn").disabled=false; }
     finally{ $("ivLoad").classList.remove("on"); }
   }
@@ -437,6 +567,7 @@
     busy(true,"Summarizing your interview…");
     try{
       const s=await post("/api/interview/summary",{jd:jd.value,qa:iv.qa});
+      cacheTabOutput("interview", { iv, summary:s });
       const li=a=>(a||[]).map(x=>`<li>${esc(x)}</li>`).join("");
       show(`<div class="panelfull">
         <div class="scorebig">${s.overallScore}<small>/10 overall</small></div>
@@ -452,6 +583,25 @@
     }catch(e){ err.textContent=e.message; }
     finally{ busy(false); }
   }
+    function renderInterviewSummary(s){
+  const li=a=>(a||[]).map(x=>`<li>${esc(x)}</li>`).join("");
+  show(`<div class="panelfull">
+    <div class="scorebig">${s.overallScore}<small>/10 overall</small></div>
+    <div class="verdict">${esc(s.verdict||"")}</div>
+    <p class="muted" style="margin-top:8px">${esc(s.summary||"")}</p>
+    <div class="twocol">
+      <div><h3 class="sec">Top strengths</h3><ul class="list">${li(s.topStrengths)}</ul></div>
+      <div><h3 class="sec">Highest-leverage fixes</h3><ul class="list">${li(s.topImprovements)}</ul></div>
+    </div>
+    <button class="run" id="againIv" style="margin-top:16px">Run another interview</button>
+  </div>`);
+  $("againIv").addEventListener("click",()=>{
+    const s = currentSession(false);
+    if(s?.outputs) delete s.outputs.interview;
+    if(s) writeSession(s);
+    startInterview();
+  });
+}
 
   // ===================== LIVE VOICE INTERVIEW =====================
   const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
