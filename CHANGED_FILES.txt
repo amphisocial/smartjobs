@@ -1,0 +1,17 @@
+Complete replacement files:
+- server.js
+- public/hr.html
+
+New files:
+- public/recruiter.js
+- public/recruiter.css
+- lib/recruiter-routes.js
+- lib/recruiter-store.js
+- lib/recruiter-prompts.js
+- db/recruiter_schema.sql
+- skills/job-designer.md
+- skills/recruiter-interviewer.md
+- .env.recruiter.example
+- RECRUITER_SETUP.md
+
+No Python patch/change script is included.

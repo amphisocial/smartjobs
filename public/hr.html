@@ -1,213 +1,127 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>RoleFit — for recruiters</title>
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-<style>
-  :root{--bg:#F5F6F8;--card:#fff;--ink:#0F172A;--muted:#64748B;--line:#E5E8EC;--accent:#0EA5A4;--accent-d:#0B8281;--ind:#4F46E5;--ok:#059669;--warn:#D97706;--bad:#DC2626}
-  *{box-sizing:border-box;margin:0;padding:0}
-  body{font-family:"Inter",system-ui,sans-serif;background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased}
-  .wrap{max-width:920px;margin:0 auto;padding:0 20px 80px}
-  header{display:flex;align-items:center;justify-content:space-between;padding:18px 0}
-  .logo{font-weight:800;font-size:19px;letter-spacing:-.02em;text-decoration:none;color:var(--ink)}
-  .logo b{color:var(--ind)}
-  .back{font-size:13px;color:var(--muted);text-decoration:none}
-  h1.page{font-size:24px;font-weight:800;letter-spacing:-.02em;margin:8px 0 4px}
-  .sub{color:var(--muted);font-size:14px;margin-bottom:18px}
-  .panel{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:14px}
-  label.fld{font-weight:600;font-size:13px;display:block;margin-bottom:8px}
-  textarea{width:100%;min-height:120px;resize:vertical;border:1px solid var(--line);border-radius:10px;padding:11px;font-family:inherit;font-size:13.5px;line-height:1.5;outline:none}
-  textarea:focus,input:focus{border-color:var(--accent)}
-  input.name{width:100%;border:1px solid var(--line);border-radius:9px;padding:9px 11px;font-family:inherit;font-size:13.5px;margin-bottom:8px;outline:none}
-  .cand{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:10px;position:relative}
-  .cand .rm{position:absolute;top:10px;right:10px;background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px}
-  .cand textarea{min-height:90px}
-  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
-  .add{background:#fff;border:1px dashed var(--accent);color:var(--accent-d);padding:10px 14px;border-radius:10px;font-weight:600;font-size:13.5px;cursor:pointer}
-  .upl{font-size:12px;color:var(--accent-d);background:#fff;border:1px solid var(--line);padding:7px 11px;border-radius:8px;cursor:pointer;font-weight:600}
-  .upl:hover{border-color:var(--accent)}
-  .run{background:var(--accent);color:#fff;border:none;padding:12px 22px;border-radius:10px;font-weight:700;font-size:14px;cursor:pointer}
-  .run:disabled{opacity:.5;cursor:default}
-  .loading{display:none;align-items:center;gap:10px;color:var(--muted);font-size:14px;margin-top:14px}
-  .loading.on{display:flex}
-  .spin{width:16px;height:16px;border:2px solid var(--line);border-top-color:var(--accent);border-radius:50%;animation:s .7s linear infinite}
-  @keyframes s{to{transform:rotate(360deg)}}
-  .err{color:var(--bad);font-size:13.5px;margin-top:10px}
-  .ranked{margin-top:18px;display:none}
-  .ranked.on{display:block}
-  .rc{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:12px}
-  .rc .top{display:flex;align-items:center;justify-content:space-between;gap:10px}
-  .rc .nm{font-weight:700;font-size:16px}
-  .rc .sc{font-weight:800;font-size:22px;letter-spacing:-.02em}
-  .pill{display:inline-block;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;margin-left:8px}
-  .pill.call{background:#ECFDF5;color:#047857}
-  .pill.maybe{background:#FFFBEB;color:#B45309}
-  .pill.pass{background:#FEF2F2;color:#B91C1C}
-  .rc .one{color:var(--muted);font-size:13.5px;margin-top:6px}
-  h3.sec{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:12px 0 6px}
-  ul.list{list-style:none;display:flex;flex-direction:column;gap:6px}
-  ul.list li{font-size:13.5px;line-height:1.45;padding-left:16px;position:relative}
-  ul.list li::before{content:"";position:absolute;left:0;top:6px;width:6px;height:6px;border-radius:2px;background:var(--accent)}
-  .twocol{display:grid;grid-template-columns:1fr 1fr;gap:18px}
-  @media(max-width:640px){.twocol{grid-template-columns:1fr}}
-  .tp{background:#F0FDFA;border:1px solid #CCFBF1;border-radius:10px;padding:14px;margin-top:12px;display:none}
-  .tp.on{display:block}
-  .tpbtn{background:#fff;border:1px solid var(--accent);color:var(--accent-d);padding:8px 12px;border-radius:9px;font-weight:600;font-size:13px;cursor:pointer;margin-top:10px}
-  .muted{color:var(--muted);font-size:13px;line-height:1.5}
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SmartJobs — Recruiter Workspace</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/recruiter.css" />
 </head>
 <body>
-  <div class="wrap">
-    <header>
-      <a class="logo" href="/">Role<b>Fit</b></a>
-      <div style="display:flex;gap:14px;align-items:center">
-        <span id="rfCredits" class="sub" style="margin:0;font-size:12px"></span>
-        <a href="#" id="rfMember" class="back">Member code</a>
-        <a class="back" href="/">← all tools</a>
+  <header class="topbar">
+    <a class="brand" href="/">Smart<span>Jobs</span></a>
+    <div class="top-actions">
+      <span class="badge" id="rfCredits"></span>
+      <a href="#" id="rfMember">Member code</a>
+      <a href="/candidate.html">Candidate tools</a>
+      <a href="/">All tools</a>
+    </div>
+  </header>
+
+  <main class="shell">
+    <section class="hero">
+      <div>
+        <p class="eyebrow">Recruiter workspace</p>
+        <h1>Jobs, candidates, ranking, and interview practice in one place.</h1>
+        <p>Persistent recruiter workflows powered by structured job profiles, reusable candidate records, stored AI reasoning, and agentic interview coaching.</p>
       </div>
-    </header>
+      <div class="hero-stat"><strong id="openJobsCount">0</strong><span>open jobs</span></div>
+    </section>
 
-    <h1 class="page">Recruiter toolkit</h1>
-    <div class="sub">Paste the role, add candidate resumes, and get a ranked shortlist with screening points.</div>
-
-    <div class="panel">
-      <div style="display:flex;justify-content:space-between;align-items:center"><label class="fld" style="margin:0">Job description</label><button class="upl" id="jdLinkBtn" type="button">🔗 from link</button></div>
-      <div id="jdUrlRow" style="display:none;gap:6px;margin-top:10px"><input id="jdUrl" placeholder="paste a job posting link…" style="flex:1;border:1px solid var(--line);border-radius:8px;padding:9px;font-size:13px;outline:none"/><button class="upl" id="jdFetch" type="button">Fetch</button></div>
-      <textarea id="jd" placeholder="Paste the role's job description…" style="margin-top:10px"></textarea>
+    <div id="accessGate" class="notice hidden">
+      <div><strong>Recruiter login required.</strong><p>Use an active SmartJobs member code to load your private recruiter workspace.</p></div>
+      <button class="primary" id="openMemberBtn">Use member code</button>
     </div>
 
-    <div id="cands"></div>
-    <div class="row" style="margin-bottom:16px">
-      <button class="add" id="addCand">+ Add candidate</button>
-      <span class="muted" id="cnt"></span>
+    <nav class="tabs" id="mainTabs" aria-label="Recruiter workspace tabs">
+      <button class="tab active" data-tab="new-job">New Job</button>
+      <button class="tab" data-tab="manage-jobs">Manage Jobs <span class="count" id="jobCount">0</span></button>
+      <button class="tab" data-tab="interview">Interview</button>
+    </nav>
+
+    <section class="view active" id="view-new-job">
+      <div class="layout-two">
+        <div class="card">
+          <div class="section-head"><div><p class="eyebrow">Create a requisition</p><h2>How do you want to start?</h2></div></div>
+          <div class="source-grid" id="sourceModes">
+            <button class="source active" data-mode="paste"><span>✎</span><b>Paste description</b><small>Structure an existing JD</small></button>
+            <button class="source" data-mode="external_link"><span>↗</span><b>External link</b><small>Import a public job page</small></button>
+            <button class="source" data-mode="linkedin"><span>in</span><b>LinkedIn</b><small>Job/profile URL or content</small></button>
+            <button class="source" data-mode="ai_help"><span>✦</span><b>AI Help</b><small>Build the role by chat</small></button>
+          </div>
+
+          <div class="mode-panel active" data-panel="paste">
+            <label>Job description<textarea id="jobRaw" rows="13" placeholder="Paste the full job description…"></textarea></label>
+          </div>
+          <div class="mode-panel" data-panel="external_link">
+            <label>Public job link<input id="externalUrl" type="url" placeholder="https://company.com/careers/job…" /></label>
+            <label>Optional pasted page text<textarea id="externalContent" rows="8" placeholder="Use this when the page blocks automated access."></textarea></label>
+          </div>
+          <div class="mode-panel" data-panel="linkedin">
+            <label>LinkedIn job or profile URL<input id="linkedinUrl" type="url" placeholder="https://www.linkedin.com/jobs/view/…" /></label>
+            <label>LinkedIn content<textarea id="linkedinContent" rows="9" placeholder="LinkedIn often blocks server retrieval. Paste the visible job/profile text here for reliable import."></textarea></label>
+          </div>
+          <div class="mode-panel" data-panel="ai_help">
+            <div class="chat" id="jobChat"><div class="bubble assistant">Describe the person you need, the business problem, and the role level. I’ll ask focused questions and build the job profile.</div></div>
+            <div class="composer"><textarea id="jobChatInput" rows="2" placeholder="Example: I need a director to lead ERP and digital manufacturing across three plants…"></textarea><button class="primary" id="jobChatSend">Send</button></div>
+            <div class="draft-ready hidden" id="draftReady"><span>AI draft is ready.</span><button class="secondary" id="applyDraft">Apply draft</button></div>
+          </div>
+        </div>
+
+        <div class="card sticky-card">
+          <div class="section-head"><div><p class="eyebrow">Job metadata</p><h2>Review and save</h2></div></div>
+          <div class="form-grid">
+            <label class="span-2">Job title<input id="jobTitle" placeholder="e.g., Director of Digital Engineering" /></label>
+            <label>Company<input id="jobCompany" placeholder="Company name" /></label>
+            <label>Target start date<input id="jobStart" type="date" /></label>
+            <label>Status<select id="jobStatus"><option value="open">Open</option><option value="in_process">In process</option><option value="closed">Closed</option></select></label>
+          </div>
+          <div id="draftPreview" class="preview-empty">Structured sections will appear after AI analysis or AI Help.</div>
+          <div class="actions"><button class="primary full" id="createJobBtn">Analyze and create job</button></div>
+          <div class="inline-error" id="newJobError"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="view" id="view-manage-jobs">
+      <div class="toolbar card compact">
+        <div class="search"><input id="jobSearch" placeholder="Search title or company" /></div>
+        <select id="jobStatusFilter"><option value="">All statuses</option><option value="open">Open</option><option value="in_process">In process</option><option value="closed">Closed</option></select>
+        <button class="secondary" id="refreshJobs">Refresh</button>
+      </div>
+      <div id="jobsList" class="jobs-grid"></div>
+      <div id="jobsEmpty" class="empty hidden"><h3>No jobs yet</h3><p>Create your first job from the New Job tab.</p></div>
+    </section>
+
+    <section class="view" id="view-interview">
+      <div class="toolbar card compact">
+        <select id="interviewJobFilter"><option value="">All jobs</option></select>
+        <input id="interviewCandidateFilter" placeholder="Filter candidate" />
+        <button class="secondary" id="refreshInterviews">Refresh</button>
+      </div>
+      <div id="interviewPairs" class="pair-list"></div>
+      <div id="interviewEmpty" class="empty hidden"><h3>No candidate-job pairs</h3><p>Add candidates to a job before starting interview practice.</p></div>
+    </section>
+  </main>
+
+  <div class="scrim hidden" id="jobModal">
+    <div class="modal wide">
+      <button class="modal-close" data-close="jobModal">×</button>
+      <div id="jobModalBody"></div>
     </div>
-
-    <button class="run" id="rankBtn">Rank candidates</button>
-    <div class="loading" id="loading"><div class="spin"></div><span id="loadTxt">Reviewing candidates…</span></div>
-    <div class="err" id="err"></div>
-
-    <div class="ranked" id="ranked"></div>
   </div>
 
-<script src="/app-billing.js"></script>
-<script>
-  const $=(id)=>document.getElementById(id);
-  const candsEl=$("cands");
-  let seq=0;
-  function esc(s){return String(s==null?"":s).replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));}
+  <div class="scrim hidden" id="interviewModal">
+    <div class="modal interview-modal">
+      <button class="modal-close" data-close="interviewModal">×</button>
+      <div id="interviewModalBody"></div>
+    </div>
+  </div>
 
-  function fileToDataUrl(file){return new Promise(r=>{const fr=new FileReader();fr.onload=()=>r(fr.result);fr.readAsDataURL(file);});}
-
-  function addCand(name=""){
-    const id="c"+(++seq);
-    const div=document.createElement("div");
-    div.className="cand"; div.dataset.id=id;
-    div.innerHTML=`<button class="rm" title="remove">✕</button>
-      <input class="name" placeholder="Candidate name (optional)" value="${esc(name)}"/>
-      <div style="display:flex;justify-content:flex-end;margin-bottom:6px"><button class="upl doc-btn" type="button">📄 upload PDF/Word</button></div>
-      <input type="file" class="doc" accept=".pdf,.docx" style="display:none"/>
-      <textarea placeholder="Paste this candidate's resume — or upload a file…"></textarea>`;
-    div.querySelector(".rm").addEventListener("click",()=>{div.remove();updateCount();});
-    const ta=div.querySelector("textarea"), docIn=div.querySelector(".doc"), upl=div.querySelector(".doc-btn");
-    upl.addEventListener("click",()=>docIn.click());
-    docIn.addEventListener("change",async()=>{
-      const f=docIn.files[0]; if(!f)return; upl.textContent="reading…";
-      try{
-        const data=await fileToDataUrl(f);
-        const r=await fetch("/api/extract-file",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({data,mime:f.type,filename:f.name})});
-        const d=await r.json(); if(r.ok&&d.text) ta.value=d.text; else alert(d.error||"Couldn't read that file.");
-      }catch(e){ alert("Couldn't read that file. Try pasting."); }
-      upl.textContent="📄 upload PDF/Word"; docIn.value="";
-    });
-    candsEl.appendChild(div); updateCount();
-  }
-  function updateCount(){ $("cnt").textContent=candsEl.children.length+" candidate"+(candsEl.children.length===1?"":"s"); }
-  $("addCand").addEventListener("click",()=>addCand());
-  addCand(); addCand(); // start with two
-
-  function collect(){
-    return [...candsEl.children].map((d,i)=>({
-      id:d.dataset.id,
-      name:d.querySelector(".name").value.trim()||("Candidate "+(i+1)),
-      resume:d.querySelector("textarea").value.trim()
-    })).filter(c=>c.resume);
-  }
-
-  async function post(url,body){ return window.RF.post(url,body); }
-
-  // job description from a link
-  $("jdLinkBtn").addEventListener("click",()=>{const r=$("jdUrlRow");const open=r.style.display!=="flex";r.style.display=open?"flex":"none";if(open)$("jdUrl").focus();});
-  async function fetchJd(){
-    const url=$("jdUrl").value.trim(); if(!url)return;
-    const btn=$("jdFetch"); btn.textContent="fetching…"; btn.disabled=true;
-    try{
-      const r=await fetch("/api/fetch-jd",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({url})});
-      const d=await r.json();
-      if(r.ok&&d.found&&d.jd){ $("jd").value=d.jd; $("jdUrlRow").style.display="none"; $("jdUrl").value=""; }
-      else alert(d.note||d.error||"Couldn't read a job description from that link. Please paste it.");
-    }catch(e){ alert("Couldn't fetch that link. Please paste the description."); }
-    btn.textContent="Fetch"; btn.disabled=false;
-  }
-  $("jdFetch").addEventListener("click",fetchJd);
-  $("jdUrl").addEventListener("keydown",e=>{if(e.key==="Enter")fetchJd();});
-
-  $("rankBtn").addEventListener("click",async()=>{
-    const jd=$("jd").value.trim(); const candidates=collect();
-    if(!jd){ $("err").textContent="Paste the job description first."; return; }
-    if(!candidates.length){ $("err").textContent="Add at least one candidate resume."; return; }
-    $("err").textContent=""; $("rankBtn").disabled=true; $("loading").classList.add("on"); $("ranked").classList.remove("on");
-    try{
-      const d=await post("/api/hr/rank",{jd,candidates});
-      renderRanked(jd,candidates,d.ranked||[]);
-    }catch(e){ $("err").textContent=e.message; }
-    finally{ $("rankBtn").disabled=false; $("loading").classList.remove("on"); }
-  });
-
-  function renderRanked(jd,candidates,ranked){
-    const byId=Object.fromEntries(candidates.map(c=>[c.id,c]));
-    const ranks=$("ranked"); ranks.innerHTML=""; ranks.classList.add("on");
-    ranked.forEach(r=>{
-      const rec=(r.recommendation||"maybe").toLowerCase();
-      const li=a=>(a||[]).map(x=>`<li>${esc(x)}</li>`).join("");
-      const div=document.createElement("div"); div.className="rc";
-      div.innerHTML=`<div class="top">
-          <div><span class="nm">${esc(r.name)}</span><span class="pill ${rec}">${esc(rec)}</span></div>
-          <div class="sc">${Math.round(r.score)}</div>
-        </div>
-        <div class="one">${esc(r.oneLine||"")}</div>
-        <div class="twocol">
-          <div><h3 class="sec">Strengths</h3><ul class="list">${li(r.strengths)}</ul></div>
-          <div><h3 class="sec">Concerns</h3><ul class="list">${li(r.concerns)}</ul></div>
-        </div>
-        <button class="tpbtn">📞 Screening talking points</button>
-        <div class="tp"></div>`;
-      const btn=div.querySelector(".tpbtn"), tp=div.querySelector(".tp");
-      btn.addEventListener("click",async()=>{
-        if(tp.classList.contains("on")){tp.classList.remove("on");return;}
-        const cand=byId[r.id]||{name:r.name,resume:""};
-        btn.textContent="Loading…"; btn.disabled=true;
-        try{
-          const d=await post("/api/hr/talking-points",{jd,candidate:cand});
-          tp.innerHTML=`<div class="muted"><b>Opener:</b> ${esc(d.suggestedOpener||"")}</div>
-            <h3 class="sec">Screening questions</h3><ul class="list">${li(d.screeningQuestions)}</ul>
-            <div class="twocol">
-              <div><h3 class="sec">Confirm</h3><ul class="list">${li(d.strengthsToConfirm)}</ul></div>
-              <div><h3 class="sec">Probe</h3><ul class="list">${li(d.probe)}</ul></div>
-            </div>
-            ${(d.redFlags||[]).length?`<h3 class="sec">Address</h3><ul class="list">${li(d.redFlags)}</ul>`:""}`;
-          tp.classList.add("on");
-        }catch(e){ tp.innerHTML=`<div class="err">${esc(e.message)}</div>`; tp.classList.add("on"); }
-        btn.textContent="📞 Screening talking points"; btn.disabled=false;
-      });
-      ranks.appendChild(div);
-    });
-    if(!ranked.length) ranks.innerHTML='<div class="muted">No ranking returned. Try again.</div>';
-    ranks.scrollIntoView({behavior:"smooth",block:"start"});
-  }
-</script>
+  <div class="toast hidden" id="toast"></div>
+  <script src="/app-billing.js"></script>
+  <script src="/recruiter.js"></script>
 </body>
 </html>

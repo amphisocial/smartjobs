@@ -13,6 +13,7 @@ import { buildResumePdf } from "./lib/pdf.js";
 import { initStore, ensureMember, getMemberByToken, setStatusByCustomer, getApplications, setApplications } from "./lib/store.js";
 import { createCheckoutSession, resolvePaidSession, constructWebhookEvent } from "./lib/billing.js";
 import { checkAndConsume, consumeLive } from "./lib/ratelimit.js";
+import { installRecruiterRoutes } from "./lib/recruiter-routes.js";
 
 assertConfig();
 await initStore();
@@ -41,6 +42,9 @@ app.post("/webhook/stripe", express.raw({ type: "application/json" }), async (re
 app.use(express.json({ limit: "12mb" }));
 app.use((req, res, next) => { if (req.path === "/" || req.path.endsWith(".html")) res.set("Cache-Control", "no-cache, no-store, must-revalidate"); next(); });
 app.use(express.static(path.join(__dirname, "public")));
+
+// Persistent recruiter workspace routes and schema initialization.
+await installRecruiterRoutes(app);
 
 app.get("/healthz", (_req, res) => res.json({ ok: true, provider: activeProvider(), billing: billingEnabled(), stripeMode: config.stripe.mode }));
 app.get("/api/config", (_req, res) => res.json({ billingEnabled: billingEnabled(), liveDailyLimit: config.liveDailyLimit, freeDailyLimit: config.freeDailyLimit }));
@@ -259,7 +263,7 @@ app.post("/api/interview/summary", async (req, res) => { try { const { jd, qa } 
 // --- ATS PDF (not gated; no AI) ---
 app.post("/api/ats-pdf", async (req, res) => { try { const { resume } = req.body || {}; if (!resume) return res.status(400).json({ error: "No resume data." }); const pdf = await buildResumePdf(resume); res.set("Content-Type", "application/pdf"); res.set("Content-Disposition", 'attachment; filename="resume-ats.pdf"'); res.send(pdf); } catch (e) { errJson(res, e); } });
 
-// --- gated HR endpoints ---
+// --- legacy one-shot HR endpoints retained for backward compatibility ---
 app.post("/api/hr/rank", async (req, res) => { try { const { jd, candidates } = req.body || {}; if (!jd || !Array.isArray(candidates) || !candidates.length) return res.status(400).json({ error: "Provide a job description and at least one candidate." }); await gated(req, res, P.hrRank(jd, candidates)); } catch (e) { errJson(res, e); } });
 app.post("/api/hr/talking-points", async (req, res) => { try { const { jd, candidate } = req.body || {}; if (!jd || !candidate) return res.status(400).json({ error: "Missing job description or candidate." }); res.json(await run(P.hrTalkingPoints(jd, candidate))); } catch (e) { errJson(res, e); } });
 
