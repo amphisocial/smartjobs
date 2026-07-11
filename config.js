@@ -1,32 +1,34 @@
 // config.js
-// -----------------------------------------------------------------------------
-// AI provider switch (AI_PROVIDER=openai|gemini) + Stripe billing with a
-// test/live mode switch (STRIPE_MODE=test|live). Set all of these as Railway
-// Variables; keys never get committed to git.
-// -----------------------------------------------------------------------------
+// Loads /opt/apps/smartjobs/.env automatically. PM2 environment values take precedence.
+import dotenv from "dotenv";
+dotenv.config({ override: false });
 
 const STRIPE_MODE = (process.env.STRIPE_MODE || "test").toLowerCase().trim();
+
 function stripeVar(name) {
   const prefix = STRIPE_MODE === "live" ? "STRIPE_LIVE_" : "STRIPE_TEST_";
   return (process.env[prefix + name] || process.env["STRIPE_" + name] || "").trim();
 }
-function buildStripeConfig() {
-  return {
-    mode: STRIPE_MODE,
-    secretKey: stripeVar("SECRET_KEY"),
-    priceId: stripeVar("PRICE_ID"),
-    webhookSecret: stripeVar("WEBHOOK_SECRET"),
-  };
+
+function positiveInt(name, fallback) {
+  const value = Number.parseInt(process.env[name] || String(fallback), 10);
+  return Number.isFinite(value) && value > 0 ? value : fallback;
 }
 
 export const config = {
   provider: (process.env.AI_PROVIDER || "openai").toLowerCase().trim(),
+  freeDailyLimit: positiveInt("FREE_DAILY_LIMIT", 3),
+  liveDailyLimit: positiveInt("LIVE_DAILY_LIMIT", 2),
 
-  // How many free AI "runs" per visitor per day before the paywall.
-  freeDailyLimit: parseInt(process.env.FREE_DAILY_LIMIT || "3", 10),
+  // Recruiter free-tier limits. Paid members remain unlimited.
+  recruiterFreeJobsDaily: positiveInt("RECRUITER_FREE_JOBS_DAILY", 5),
+  recruiterFreeRankRunsDaily: positiveInt("RECRUITER_FREE_RANK_RUNS_DAILY", 5),
+  recruiterFreeInterviewsDaily: positiveInt("RECRUITER_FREE_INTERVIEWS_DAILY", 5),
 
-  // How many LIVE voice interviews a paid member can run per day (Pro = unlimited later).
-  liveDailyLimit: Math.max(1, parseInt(process.env.LIVE_DAILY_LIMIT || "2", 10) || 2),
+  // Google Identity Services. No Google client secret is required for ID-token sign-in.
+  googleClientId: (process.env.GOOGLE_CLIENT_ID || "").trim(),
+  authSessionSecret: (process.env.AUTH_SESSION_SECRET || "").trim(),
+  recruiterSessionDays: positiveInt("RECRUITER_AUTH_SESSION_DAYS", 30),
 
   openai: {
     apiKey: process.env.OPENAI_API_KEY || "",
@@ -39,32 +41,46 @@ export const config = {
     baseUrl: process.env.GEMINI_BASE_URL || "https://generativelanguage.googleapis.com/v1beta",
   },
 
-  // Billing: STRIPE_MODE picks which key set is active (store both, flip to switch).
-  stripe: buildStripeConfig(),
+  stripe: {
+    mode: STRIPE_MODE,
+    secretKey: stripeVar("SECRET_KEY"),
+    priceId: stripeVar("PRICE_ID"),
+    webhookSecret: stripeVar("WEBHOOK_SECRET"),
+  },
 
-  databaseUrl: process.env.DATABASE_URL || "",
+  databaseUrl: (process.env.DATABASE_URL || "").trim(),
   pgSsl: (process.env.PGSSL || "false").toLowerCase() === "true",
-
-  port: parseInt(process.env.PORT || "3000", 10),
+  port: Number.parseInt(process.env.PORT || "3000", 10),
 };
 
 export function assertConfig() {
-  const p = config.provider;
-  if (p !== "openai" && p !== "gemini") throw new Error(`AI_PROVIDER must be "openai" or "gemini", got "${p}"`);
-  if (p === "openai" && !config.openai.apiKey) throw new Error("AI_PROVIDER=openai but OPENAI_API_KEY is not set");
-  if (p === "gemini" && !config.gemini.apiKey) throw new Error("AI_PROVIDER=gemini but GEMINI_API_KEY is not set");
+  if (!["openai", "gemini"].includes(config.provider)) {
+    throw new Error(`AI_PROVIDER must be "openai" or "gemini", got "${config.provider}"`);
+  }
+  if (config.provider === "openai" && !config.openai.apiKey) {
+    throw new Error("AI_PROVIDER=openai but OPENAI_API_KEY is not set");
+  }
+  if (config.provider === "gemini" && !config.gemini.apiKey) {
+    throw new Error("AI_PROVIDER=gemini but GEMINI_API_KEY is not set");
+  }
+  if (config.googleClientId && !config.authSessionSecret) {
+    throw new Error("GOOGLE_CLIENT_ID is set but AUTH_SESSION_SECRET is missing");
+  }
 }
 
 export function activeProvider() { return config.provider; }
-
-export function billingEnabled() {
-  return Boolean(config.stripe.secretKey && config.stripe.priceId);
-}
+export function billingEnabled() { return Boolean(config.stripe.secretKey && config.stripe.priceId); }
+export function googleAuthEnabled() { return Boolean(config.googleClientId && config.authSessionSecret); }
 
 export function billingModeWarning() {
   if (!billingEnabled()) return null;
-  const k = config.stripe.secretKey, m = config.stripe.mode;
-  if (m === "live" && k.startsWith("sk_test_")) return "STRIPE_MODE=live but the active key is sk_test_ — real cards won't charge. Check STRIPE_LIVE_SECRET_KEY.";
-  if (m === "test" && k.startsWith("sk_live_")) return "STRIPE_MODE=test but the active key is sk_live_ — test cards will be REJECTED. Check STRIPE_TEST_SECRET_KEY.";
+  const k = config.stripe.secretKey;
+  const m = config.stripe.mode;
+  if (m === "live" && k.startsWith("sk_test_")) {
+    return "STRIPE_MODE=live but the active key is sk_test_. Check STRIPE_LIVE_SECRET_KEY.";
+  }
+  if (m === "test" && k.startsWith("sk_live_")) {
+    return "STRIPE_MODE=test but the active key is sk_live_. Check STRIPE_TEST_SECRET_KEY.";
+  }
   return null;
 }

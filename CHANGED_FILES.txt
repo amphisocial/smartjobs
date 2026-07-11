@@ -1,17 +1,25 @@
 Complete replacement files:
+- package.json
+- config.js
 - server.js
 - public/hr.html
-
-New files:
 - public/recruiter.js
 - public/recruiter.css
 - lib/recruiter-routes.js
 - lib/recruiter-store.js
-- lib/recruiter-prompts.js
 - db/recruiter_schema.sql
-- skills/job-designer.md
-- skills/recruiter-interviewer.md
+- .env.example
 - .env.recruiter.example
 - RECRUITER_SETUP.md
+
+New files:
+- lib/google-auth.js
+- public/recruiter-auth.js
+
+Retained complete files:
+- lib/recruiter-prompts.js
+- scripts/init-recruiter-db.js
+- skills/job-designer.md
+- skills/recruiter-interviewer.md
 
 No Python patch/change script is included.

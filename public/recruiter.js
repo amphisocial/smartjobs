@@ -1,6 +1,6 @@
 (() => {
   const $ = id => document.getElementById(id);
-  const state = { jobs: [], pairs: [], sourceMode: "paste", aiDraft: null, jobAgentSession: null, activeJob: null, interview: null };
+  const state = { jobs: [], pairs: [], sourceMode: "paste", aiDraft: null, jobAgentSession: null, activeJob: null, interview: null, usage: null, unlimited: false, user: null };
   const PIPE = ["new","screening","interview","offer","rejected","withdrawn","hired"];
   const COVERAGE_LABELS = { currentRole:"Current role", motivation:"Motivation / leaving", mustHaves:"Must-haves", gaps:"Gaps / transitions", leadership:"Leadership scope", outcomes:"Measured outcomes", logistics:"Logistics", candidateQuestions:"Candidate questions" };
 
@@ -10,9 +10,46 @@
   function statusLabel(v){return ({open:"Open",in_process:"In process",closed:"Closed"})[v]||v;}
   function fmtDate(v){if(!v)return "—";try{let d;if(/^\d{4}-\d{2}-\d{2}$/.test(String(v).slice(0,10))&&!String(v).includes("T")){const [y,m,day]=String(v).split("-").map(Number);d=new Date(y,m-1,day);}else d=new Date(v);return new Intl.DateTimeFormat(undefined,{month:"short",day:"numeric",year:"numeric"}).format(d);}catch{return v;}}
   function toast(msg){const el=$("toast");el.textContent=msg;el.classList.remove("hidden");clearTimeout(toast.t);toast.t=setTimeout(()=>el.classList.add("hidden"),2600);}
-  async function post(url, body={}){return window.RF.post(url, body);}
+  function applyMeta(d={}){
+    if(d.usage)state.usage=d.usage;
+    if(typeof d.unlimited==="boolean")state.unlimited=d.unlimited;
+    if(d.user)state.user=d.user;
+    renderUsage();
+  }
+  async function post(url, body={}){
+    await window.RecruiterAuth.ready;
+    try{
+      const d=await window.RF.post(url,{...body,recruiterSession:window.RecruiterAuth.sessionToken});
+      applyMeta(d);
+      return d;
+    }catch(e){
+      if(e.message==="google_signin_required"){
+        window.RecruiterAuth.signOut();
+        throw new Error("Your Google session expired. Please sign in again.");
+      }
+      throw e;
+    }
+  }
   function setBusy(btn,on,label){if(!btn)return;if(on){btn.dataset.old=btn.textContent;btn.textContent=label||"Working…";btn.disabled=true;}else{btn.textContent=btn.dataset.old||btn.textContent;btn.disabled=false;}}
-  function hasLogin(){return !!window.RF?.token;}
+  function hasLogin(){return !!window.RecruiterAuth?.signedIn;}
+  function showLogin(){
+    $("accessGate").classList.remove("hidden");
+    $("accessGate").scrollIntoView({behavior:"smooth",block:"center"});
+  }
+  function quotaText(row){
+    if(state.unlimited)return "Unlimited";
+    if(!row)return "—";
+    return `${row.used} / ${row.limit}`;
+  }
+  function renderUsage(){
+    const signedIn=hasLogin();
+    $("usagePanel").classList.toggle("hidden",!signedIn);
+    if(!signedIn)return;
+    $("usageJobs").textContent=quotaText(state.usage?.jobs);
+    $("usageRanks").textContent=quotaText(state.usage?.ranks);
+    $("usageInterviews").textContent=quotaText(state.usage?.interviews);
+    $("usageNote").textContent=state.unlimited?"Unlimited recruiter plan":"Free recruiter plan • resets daily";
+  }
 
   function selectTab(name){
     document.querySelectorAll("#mainTabs .tab").forEach(b=>b.classList.toggle("active",b.dataset.tab===name));
@@ -83,7 +120,7 @@
   }
   $("createJobBtn").onclick=async()=>{
     const btn=$("createJobBtn"),err=$("newJobError");err.textContent="";
-    if(!hasLogin()){window.RF.openMember();return;}
+    if(!hasLogin()){showLogin();return;}
     try{
       setBusy(btn,true,state.sourceMode==="paste"?"Analyzing…":"Creating…");
       let d;
@@ -109,7 +146,7 @@
   }
   function updateCounts(){
     $("jobCount").textContent=state.jobs.length;$("openJobsCount").textContent=state.jobs.filter(j=>j.status==="open").length;
-    $("accessGate").classList.toggle("hidden",hasLogin());
+    $("accessGate").classList.toggle("hidden",hasLogin());renderUsage();
   }
   function fillJobFilters(){
     const current=$("interviewJobFilter").value;
@@ -209,9 +246,25 @@
 
   // ---------- startup ----------
   async function bootstrap(){
+    await window.RecruiterAuth.ready;
     updateCounts();renderDraft();
-    if(!hasLogin())return;
-    try{const d=await post("/api/recruiter/bootstrap",{});state.jobs=d.jobs||[];state.pairs=d.pairs||[];updateCounts();renderJobs();renderInterviewPairs();fillJobFilters();}catch(e){$("accessGate").classList.remove("hidden");$("accessGate").querySelector("p").textContent=e.message;}
+    if(!hasLogin()){
+      state.jobs=[];state.pairs=[];state.usage=null;state.unlimited=false;
+      updateCounts();renderJobs();renderInterviewPairs();fillJobFilters();renderUsage();
+      return;
+    }
+    try{
+      const d=await post("/api/recruiter/bootstrap",{});
+      state.jobs=d.jobs||[];state.pairs=d.pairs||[];
+      updateCounts();renderJobs();renderInterviewPairs();fillJobFilters();renderUsage();
+    }catch(e){
+      $("accessGate").classList.remove("hidden");
+      $("googleAuthMessage").textContent=e.message;
+    }
   }
+  window.addEventListener("rf:recruiter-auth-changed",()=>{
+    state.jobs=[];state.pairs=[];state.activeJob=null;state.interview=null;
+    bootstrap();
+  });
   bootstrap();
 })();

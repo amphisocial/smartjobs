@@ -129,4 +129,24 @@ CREATE TABLE IF NOT EXISTS recruiter_interview_turns (
 );
 CREATE INDEX IF NOT EXISTS recruiter_interview_turns_session_idx ON recruiter_interview_turns (session_id, id);
 
+CREATE TABLE IF NOT EXISTS recruiter_accounts (
+  recruiter_key TEXT PRIMARY KEY,
+  email TEXT NOT NULL,
+  display_name TEXT NOT NULL DEFAULT '',
+  picture_url TEXT NOT NULL DEFAULT '',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  last_login_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE UNIQUE INDEX IF NOT EXISTS recruiter_accounts_email_idx ON recruiter_accounts (lower(email));
+
+CREATE TABLE IF NOT EXISTS recruiter_daily_usage (
+  recruiter_key TEXT NOT NULL,
+  usage_date DATE NOT NULL DEFAULT CURRENT_DATE,
+  action TEXT NOT NULL CHECK (action IN ('job_create','rank_run','interview_start')),
+  usage_count INTEGER NOT NULL DEFAULT 0 CHECK (usage_count >= 0),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (recruiter_key, usage_date, action)
+);
+CREATE INDEX IF NOT EXISTS recruiter_daily_usage_date_idx ON recruiter_daily_usage (usage_date, action);
+
 COMMIT;

@@ -14,7 +14,12 @@
     <a class="brand" href="/">Smart<span>Jobs</span></a>
     <div class="top-actions">
       <span class="badge" id="rfCredits"></span>
-      <a href="#" id="rfMember">Member code</a>
+      <div class="account hidden" id="recruiterAccount">
+        <img class="account-picture hidden" id="recruiterAccountPicture" alt="" />
+        <span id="recruiterAccountName"></span>
+      </div>
+      <a href="#" class="hidden" id="recruiterSignOut">Sign out</a>
+      <a href="#" id="rfMember">Upgrade / member code</a>
       <a href="/candidate.html">Candidate tools</a>
       <a href="/">All tools</a>
     </div>
@@ -31,8 +36,22 @@
     </section>
 
     <div id="accessGate" class="notice hidden">
-      <div><strong>Recruiter login required.</strong><p>Use an active SmartJobs member code to load your private recruiter workspace.</p></div>
-      <button class="primary" id="openMemberBtn">Use member code</button>
+      <div>
+        <strong>Sign in to your recruiter workspace.</strong>
+        <p>Google sign-in keeps jobs, candidates, rankings, and interview sessions private to your account. Free accounts receive the daily limits shown below.</p>
+        <div id="googleAuthMessage" class="inline-error"></div>
+      </div>
+      <div class="login-actions">
+        <div id="googleSignInButton"></div>
+        <button class="secondary" id="openMemberBtn">Already subscribed? Use member code</button>
+      </div>
+    </div>
+
+    <div id="usagePanel" class="usage-panel hidden">
+      <div class="usage-item"><span>New jobs today</span><strong id="usageJobs">0 / 5</strong></div>
+      <div class="usage-item"><span>Ranking runs today</span><strong id="usageRanks">0 / 5</strong></div>
+      <div class="usage-item"><span>Interviews today</span><strong id="usageInterviews">0 / 5</strong></div>
+      <div class="usage-note" id="usageNote">Free recruiter plan</div>
     </div>
 
     <nav class="tabs" id="mainTabs" aria-label="Recruiter workspace tabs">
@@ -121,7 +140,9 @@
   </div>
 
   <div class="toast hidden" id="toast"></div>
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
   <script src="/app-billing.js"></script>
+  <script src="/recruiter-auth.js"></script>
   <script src="/recruiter.js"></script>
 </body>
 </html>

@@ -7,7 +7,7 @@ import net from "node:net";
 import { fileURLToPath } from "node:url";
 import mammoth from "mammoth";
 import { extractText as pdfExtractText, getDocumentProxy } from "unpdf";
-import { config, assertConfig, activeProvider, billingEnabled, billingModeWarning } from "./config.js";
+import { config, assertConfig, activeProvider, billingEnabled, billingModeWarning, googleAuthEnabled } from "./config.js";
 import { complete, parseJson } from "./lib/providers.js";
 import * as P from "./lib/prompts.js";
 import { buildResumePdf } from "./lib/pdf.js";
@@ -15,6 +15,7 @@ import { initStore, ensureMember, getMemberByToken, setStatusByCustomer, getAppl
 import { createCheckoutSession, resolvePaidSession, constructWebhookEvent } from "./lib/billing.js";
 import { checkAndConsume, consumeLive } from "./lib/ratelimit.js";
 import { installRecruiterRoutes } from "./lib/recruiter-routes.js";
+import { recruiterDbReady } from "./lib/recruiter-store.js";
 
 assertConfig();
 await initStore();
@@ -47,8 +48,31 @@ app.use(express.static(path.join(__dirname, "public")));
 // Persistent recruiter workspace routes and schema initialization.
 await installRecruiterRoutes(app);
 
-app.get("/healthz", (_req, res) => res.json({ ok: true, provider: activeProvider(), billing: billingEnabled(), stripeMode: config.stripe.mode }));
-app.get("/api/config", (_req, res) => res.json({ billingEnabled: billingEnabled(), liveDailyLimit: config.liveDailyLimit, freeDailyLimit: config.freeDailyLimit }));
+app.get("/healthz", (_req, res) => res.json({
+  ok: true,
+  provider: activeProvider(),
+  billing: billingEnabled(),
+  stripeMode: config.stripe.mode,
+  databaseConfigured: Boolean(config.databaseUrl),
+  recruiterDatabaseReady: recruiterDbReady(),
+  googleAuthConfigured: googleAuthEnabled(),
+  recruiterLimits: {
+    jobs: config.recruiterFreeJobsDaily,
+    ranks: config.recruiterFreeRankRunsDaily,
+    interviews: config.recruiterFreeInterviewsDaily,
+  },
+}));
+app.get("/api/config", (_req, res) => res.json({
+  billingEnabled: billingEnabled(),
+  liveDailyLimit: config.liveDailyLimit,
+  freeDailyLimit: config.freeDailyLimit,
+  googleAuthEnabled: googleAuthEnabled(),
+  recruiterLimits: {
+    jobs: config.recruiterFreeJobsDaily,
+    ranks: config.recruiterFreeRankRunsDaily,
+    interviews: config.recruiterFreeInterviewsDaily,
+  },
+}));
 
 // --- entitlement gate: members are unlimited; everyone else has a daily cap ---
 async function gate(req, res) {

@@ -1,6 +1,6 @@
 Repository: https://github.com/amphisocial/smartjobs
 Branch: main
-Base commit inspected: b33f1f88b7e0bd9fe80ff6fe4416914171b053d0
-Base commit message: cache content
+Latest commit inspected: 29a3e41065b7812dfb289bf3aa9a166caedcca6f
+Commit message: job recruiter redefined1
 
-The ZIP contains complete replacement copies of every modified file plus every new file required for the recruiter workspace.
+This ZIP contains complete replacement files, not a patch script.

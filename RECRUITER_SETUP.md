@@ -1,135 +1,190 @@
-# SmartJobs Recruiter Workspace — EC2 Setup
+# SmartJobs Recruiter Workspace — Google Sign-In and Configurable Free Limits
 
-This release is designed for the existing installation:
+Target deployment:
 
 - Application directory: `/opt/apps/smartjobs`
-- PM2 process name: `smartjobs`
-- Existing Node/Express application and member-code authentication remain in place.
-- Existing OpenAI/Gemini provider configuration is reused.
-- The existing `pg` dependency in `package.json` is sufficient; no new npm package is required.
+- PM2 process: `smartjobs`
+- Site: `https://smartjobs.athenabot.ai`
+- Database: PostgreSQL through `DATABASE_URL`
 
-## What this release changes
+## Behavior in this release
 
-Replace/add these files in the SmartJobs application root:
+Every recruiter signs in with Google. Google identity owns the recruiter's jobs, candidates, rankings, and interview history.
 
-```text
-server.js
-lib/recruiter-routes.js
-lib/recruiter-store.js
-lib/recruiter-prompts.js
-public/hr.html
-public/recruiter.js
-public/recruiter.css
-db/recruiter_schema.sql
-skills/job-designer.md
-skills/recruiter-interviewer.md
-```
+An active SmartJobs member code is now an **upgrade**, not the recruiter login:
 
-The recruiter workspace uses the current active SmartJobs member code as its login identity. The raw token is not stored in recruiter tables; a one-way SHA-256-derived recruiter key isolates each recruiter's records.
+- Google signed-in recruiter without an active member code: free daily limits apply.
+- Google signed-in recruiter with an active member code: unlimited recruiter usage.
+- A member code without Google sign-in does not open the recruiter workspace.
 
-## 1. Back up the current application
+Default free limits:
+
+- 5 successfully requested new-job creations per day.
+- 5 candidate-ranking runs per day.
+- 5 new interview-practice sessions per day.
+
+A ranking run means one click on **Rank unranked candidates** or **Re-rank all**. The batch may rank multiple candidates, but it consumes one ranking run. Opening, filtering, viewing, editing, adding candidates, and changing pipeline status do not consume ranking runs. Interview turns and the final assessment do not consume another interview; only starting a new session does.
+
+All three limits are configurable in `.env`.
+
+## 1. Back up the existing application
 
 ```bash
 cd /opt/apps
 sudo cp -a smartjobs "smartjobs.backup.$(date +%Y%m%d-%H%M%S)"
+sudo cp /opt/apps/smartjobs/.env "/opt/apps/smartjobs.env.backup.$(date +%Y%m%d-%H%M%S)" 2>/dev/null || true
 ```
 
-## 2. Copy the release files
+## 2. Copy the release
 
-Upload and unzip `smartjobs-recruiter-workspace.zip`, then copy its contents over the current application:
+Unzip the release and copy all files, including hidden files:
 
 ```bash
+cd /path/to/unzipped
+sudo cp -a smartjobs_recruiter_release_v4/. /opt/apps/smartjobs/
 cd /opt/apps/smartjobs
-sudo cp -a /path/to/unzipped/smartjobs_recruiter_release/. /opt/apps/smartjobs/
-sudo chown -R $(stat -c '%U:%G' /opt/apps/smartjobs) /opt/apps/smartjobs
+sudo chown -R "$(stat -c '%U:%G' /opt/apps/smartjobs)" /opt/apps/smartjobs
+npm install --omit=dev
 ```
 
-Do not delete the existing files that are not included in this release. This ZIP contains complete replacement versions of every changed file, not a Python patch script.
+`npm install` installs the added `google-auth-library` and `dotenv` dependencies.
 
-## 3. Configure PostgreSQL
+## 3. Configure Google authentication
 
-Use an existing PostgreSQL database or create one. Set these variables in the same environment source currently used by the PM2 `smartjobs` process:
+In Google Cloud Console:
+
+1. Select the Google Cloud project used by SmartJobs.
+2. Open **APIs & Services → Credentials**.
+3. Create or reuse an **OAuth 2.0 Client ID** of type **Web application**.
+4. Add this Authorized JavaScript origin:
+
+```text
+https://smartjobs.athenabot.ai
+```
+
+No redirect URI is required for this Google Identity Services ID-token callback flow.
+
+If the job-hunter side already uses a Web OAuth client for this same origin, reuse that client ID.
+
+Generate the SmartJobs session-signing secret:
 
 ```bash
-DATABASE_URL=postgresql://smartjobs:STRONG_PASSWORD@127.0.0.1:5432/smartjobs
+openssl rand -hex 32
+```
+
+Add these values to `/opt/apps/smartjobs/.env`:
+
+```dotenv
+GOOGLE_CLIENT_ID=YOUR_CLIENT_ID.apps.googleusercontent.com
+AUTH_SESSION_SECRET=PASTE_THE_OPENSSL_VALUE
+RECRUITER_AUTH_SESSION_DAYS=30
+```
+
+`GOOGLE_CLIENT_SECRET` is not needed and should not be added for this implementation.
+
+## 4. Configure recruiter limits
+
+Add or change:
+
+```dotenv
+RECRUITER_FREE_JOBS_DAILY=5
+RECRUITER_FREE_RANK_RUNS_DAILY=5
+RECRUITER_FREE_INTERVIEWS_DAILY=5
+```
+
+Changing these values and restarting PM2 changes the limits without a code rebuild.
+
+The existing job-hunter controls remain separate:
+
+```dotenv
+FREE_DAILY_LIMIT=3
+LIVE_DAILY_LIMIT=2
+```
+
+## 5. Confirm PostgreSQL configuration
+
+The recruiter workspace requires:
+
+```dotenv
+DATABASE_URL=postgresql://smartjobs:YOUR_PASSWORD@127.0.0.1:5432/smartjobs
 PGSSL=false
 ```
 
-For a managed PostgreSQL service that requires TLS, set:
+For a managed PostgreSQL service that requires TLS, use its supplied URL and set:
 
-```bash
+```dotenv
 PGSSL=true
 ```
 
-### Optional local PostgreSQL creation example
-
-Run only if PostgreSQL is installed locally and you need a new database/user:
+Protect the environment file:
 
 ```bash
-sudo -u postgres psql
+sudo chmod 600 /opt/apps/smartjobs/.env
 ```
 
-Then execute, using your own strong password:
+## 6. Install or update the schema
 
-```sql
-CREATE USER smartjobs WITH PASSWORD 'STRONG_PASSWORD';
-CREATE DATABASE smartjobs OWNER smartjobs;
-GRANT ALL PRIVILEGES ON DATABASE smartjobs TO smartjobs;
-\q
-```
-
-## 4. Install the schema
-
-The application automatically runs `db/recruiter_schema.sql` on startup using `CREATE TABLE IF NOT EXISTS`, so it is safe to restart repeatedly.
-
-For an explicit installation/validation before restart:
-
-```bash
-cd /opt/apps/smartjobs
-psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f db/recruiter_schema.sql
-```
-
-Expected tables:
+The schema is idempotent and now adds:
 
 ```text
-recruiter_jobs
-recruiter_candidates
-recruiter_job_candidates
-recruiter_candidate_rankings
-recruiter_job_builder_sessions
-recruiter_job_builder_messages
-recruiter_interview_sessions
-recruiter_interview_turns
+recruiter_accounts
+recruiter_daily_usage
 ```
 
-## 5. Restart the existing PM2 service
+along with the existing recruiter job, candidate, ranking, job-builder, and interview tables.
 
-If your variables are loaded from `/opt/apps/smartjobs/.env`, export them before the restart because this project does not currently use the `dotenv` package:
+Run:
 
 ```bash
 cd /opt/apps/smartjobs
-set -a
-source .env
-set +a
+npm run db:init
+```
+
+Verify the usage table:
+
+```bash
+psql "$DATABASE_URL" -c "\d recruiter_daily_usage"
+```
+
+## 7. Restart SmartJobs
+
+```bash
+cd /opt/apps/smartjobs
 pm2 restart smartjobs --update-env
 pm2 save
+pm2 logs smartjobs --lines 100
 ```
 
-If PM2 uses an ecosystem file, add `DATABASE_URL` and `PGSSL` to that file's `env` section and restart with the ecosystem file instead.
-
-## 6. Validate
+## 8. Validate configuration
 
 ```bash
-pm2 logs smartjobs --lines 100
-curl -s https://smartjobs.athenabot.ai/healthz
+curl -s https://smartjobs.athenabot.ai/healthz | jq
 ```
 
-The log should include:
+Expected fields include:
 
-```text
-[store] Postgres ready.
-[recruiter-store] Postgres schema ready.
+```json
+{
+  "databaseConfigured": true,
+  "recruiterDatabaseReady": true,
+  "googleAuthConfigured": true,
+  "recruiterLimits": {
+    "jobs": 5,
+    "ranks": 5,
+    "interviews": 5
+  }
+}
 ```
+
+The public recruiter authentication configuration can also be checked:
+
+```bash
+curl -s https://smartjobs.athenabot.ai/api/recruiter/auth/config | jq
+```
+
+Only the public OAuth client ID is returned. The session secret is never returned to the browser.
+
+## 9. Functional test
 
 Open:
 
@@ -137,25 +192,43 @@ Open:
 https://smartjobs.athenabot.ai/hr.html
 ```
 
-Use an active member code, then test:
+Test this sequence:
 
-1. **New Job** — paste a JD, import a public link, paste LinkedIn content, or use AI Help.
-2. **Manage Jobs** — open the saved job, edit status/details, add candidates, and rank unranked candidates.
-3. Refresh the browser and confirm jobs, candidates, rankings, and reasoning remain available without another AI ranking call.
-4. **Interview** — filter by job/candidate, start a role-play, ask recruiter questions, and finish for a stored coaching assessment.
+1. Sign in with Google without entering a member code.
+2. Confirm the page shows three free usage counters.
+3. Create a job and confirm the New Jobs counter changes from `0 / 5` to `1 / 5`.
+4. Add candidates and click Rank Unranked; confirm the Ranking Runs counter changes once for the entire batch.
+5. Start an interview; confirm the Interviews counter changes once.
+6. Refresh the browser and confirm Google session, recruiter data, and counters remain.
+7. Enter an active member code and perform another recruiter action; the counters should display `Unlimited`.
+8. Sign out and sign in again with the same Google account; the same recruiter records should load.
 
-## LinkedIn behavior
+## Existing recruiter-data migration
 
-The importer first attempts server-side retrieval with SSRF protection. LinkedIn frequently returns a login wall or JavaScript-only page to server requests. The UI therefore includes a LinkedIn content field; pasting the visible job/profile text provides a reliable supported path and still runs the same AI structuring workflow.
+The earlier recruiter release stored ownership using a hash of the member code. When a Google-signed-in recruiter supplies that same active member code, this release automatically migrates the older recruiter-owned jobs, candidates, job-builder sessions, and interview sessions to the Google identity. The raw member code and Google subject identifier are never stored in recruiter tables.
 
-## Ranking cache behavior
+## Daily usage storage
 
-A ranking remains current while both are unchanged:
+Usage is stored in PostgreSQL by recruiter identity, date, and action. Restarting PM2 or changing browsers does not reset usage. Paid members bypass the counters but still use Google sign-in to identify their private recruiter workspace.
 
-- the job's `row_version`
-- the candidate resume's SHA-256 hash
+## Files added or replaced
 
-Editing a job marks prior rankings **stale**. Candidates with no ranking are **unranked**. “Rank unranked candidates” calls AI only for unranked or stale records; current rankings and full reasoning are read from PostgreSQL.
+```text
+package.json
+config.js
+server.js
+.env.example
+.env.recruiter.example
+db/recruiter_schema.sql
+lib/google-auth.js
+lib/recruiter-routes.js
+lib/recruiter-store.js
+public/hr.html
+public/recruiter-auth.js
+public/recruiter.js
+public/recruiter.css
+scripts/init-recruiter-db.js
+```
 
 ## Rollback
 
@@ -163,9 +236,5 @@ Editing a job marks prior rankings **stale**. Candidates with no ranking are **u
 pm2 stop smartjobs
 sudo mv /opt/apps/smartjobs /opt/apps/smartjobs.failed
 sudo mv /opt/apps/smartjobs.backup.YYYYMMDD-HHMMSS /opt/apps/smartjobs
-cd /opt/apps/smartjobs
-set -a; source .env; set +a
 pm2 restart smartjobs --update-env
 ```
-
-The new recruiter tables are isolated and do not alter the existing `members` or `applications` tables.
