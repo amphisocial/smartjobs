@@ -62,6 +62,7 @@
   document.querySelectorAll("[data-close]").forEach(b=>b.addEventListener("click",()=>$(b.dataset.close).classList.add("hidden")));
   document.querySelectorAll(".scrim").forEach(s=>s.addEventListener("click",e=>{if(e.target===s)s.classList.add("hidden");}));
   $("openMemberBtn").onclick=()=>window.RF.openMember();
+  $("recruiterUpgradeBtn").onclick=()=>window.RF.openPay();
 
   // ---------- New Job ----------
   $("sourceModes").addEventListener("click",e=>{
