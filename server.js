@@ -1,4 +1,5 @@
 // server.js
+import "dotenv/config";
 import express from "express";
 import path from "node:path";
 import dns from "node:dns/promises";
