@@ -20,6 +20,14 @@ function envValue(names, fallback = "") {
   return fallback;
 }
 
+function secretValue(names, fallback = "") {
+  const value = envValue(names, fallback);
+  // PM2 ecosystem files and shell exports sometimes preserve literal wrapping
+  // quotes. Strip only one matching outer quote pair; never log the secret.
+  const match = String(value).match(/^(["'])([\s\S]*)\1$/);
+  return (match ? match[2] : String(value)).trim();
+}
+
 function envSource(names) {
   const list = Array.isArray(names) ? names : [names];
   for (const name of list) {
@@ -74,9 +82,9 @@ export const config = {
   jobAgentSearchProvider: envValue("JOB_AGENT_SEARCH_PROVIDER", "auto").toLowerCase(),
   jobAgentSearchAllowFallback: booleanVar("JOB_AGENT_SEARCH_ALLOW_FALLBACK", true),
   jobAgentSearchRssUrl: envValue("JOB_AGENT_SEARCH_RSS_URL", "https://www.bing.com/search"),
-  serperApiKey: envValue(["SERPER_API_KEY", "SERPER_KEY", "SERPER_APIKEY", "SERPERDEV_API_KEY", "JOB_AGENT_SERPER_API_KEY"]),
+  serperApiKey: secretValue(["SERPER_API_KEY", "SERPER_KEY", "SERPER_APIKEY", "SERPERDEV_API_KEY", "JOB_AGENT_SERPER_API_KEY"]),
   serperKeySource: envSource(["SERPER_API_KEY", "SERPER_KEY", "SERPER_APIKEY", "SERPERDEV_API_KEY", "JOB_AGENT_SERPER_API_KEY"]),
-  braveSearchApiKey: envValue(["BRAVE_SEARCH_API_KEY", "BRAVE_API_KEY", "JOB_AGENT_BRAVE_API_KEY"]),
+  braveSearchApiKey: secretValue(["BRAVE_SEARCH_API_KEY", "BRAVE_API_KEY", "JOB_AGENT_BRAVE_API_KEY"]),
   braveKeySource: envSource(["BRAVE_SEARCH_API_KEY", "BRAVE_API_KEY", "JOB_AGENT_BRAVE_API_KEY"]),
   appBaseUrl: envValue("APP_BASE_URL"),
 
