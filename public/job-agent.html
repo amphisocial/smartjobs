@@ -140,8 +140,61 @@
           </div>
         </section>
 
+
         <section class="form-card">
           <div class="step-number">5</div>
+          <div class="form-content">
+            <h3>Posting recency and source verification</h3>
+            <p>Control how SmartJobs handles original posting dates, reposts, official ATS sources, and whether the application is still accepting submissions.</p>
+            <div class="grid three">
+              <label>Maximum posting age
+                <select id="maxPostingAgeDays">
+                  <option value="7">7 days</option><option value="14">14 days</option><option value="30" selected>30 days</option>
+                  <option value="60">60 days</option><option value="90">90 days</option><option value="0">Any age</option>
+                </select>
+              </label>
+              <label>Missing posting date
+                <select id="postingDatePolicy">
+                  <option value="require_date">Require an official date</option>
+                  <option value="allow_missing" selected>Allow but clearly flag</option>
+                  <option value="ignore">Ignore posting dates</option>
+                </select>
+              </label>
+              <label>Reposted roles
+                <select id="repostPolicy">
+                  <option value="use_original" selected>Use earliest/original date</option>
+                  <option value="use_latest">Use latest official date</option>
+                  <option value="exclude">Exclude detected reposts</option>
+                </select>
+              </label>
+            </div>
+            <div class="grid two">
+              <label class="check"><input id="officialSourcesOnly" type="checkbox" checked /> Require an employer career page or official ATS as proof</label>
+              <label class="check"><input id="verifyApplicationOpen" type="checkbox" checked /> Verify the page still shows an open application</label>
+              <label class="check"><input id="allowAggregatorDiscovery" type="checkbox" checked /> Allow aggregators only as discovery clues, never as proof</label>
+            </div>
+            <label>Preferred official source systems<textarea id="preferredSourceSystems" rows="5">workday
+adp
+greenhouse
+lever
+smartrecruiters
+successfactors
+oracle
+icims
+ukg
+dayforce
+jobvite
+ashby
+avature
+eightfold
+phenom
+employer</textarea></label>
+            <div class="hint">Supported source keys include Workday, ADP Workforce Now/Recruiting, Greenhouse, Lever, SmartRecruiters, SuccessFactors, Oracle, iCIMS, UKG, Dayforce, Jobvite, Ashby, Avature, Eightfold, Phenom, and direct employer career pages.</div>
+          </div>
+        </section>
+
+        <section class="form-card">
+          <div class="step-number">6</div>
           <div class="form-content">
             <div class="section-inline">
               <div><h3>Search plan and monitoring</h3><p>Generate a preview, edit preferences, save, and schedule the agent.</p></div>

@@ -28,6 +28,13 @@ CREATE TABLE IF NOT EXISTS job_search_agents (
   min_base_compensation INTEGER,
   min_total_compensation INTEGER,
   max_results INTEGER NOT NULL DEFAULT 25,
+  max_posting_age_days INTEGER NOT NULL DEFAULT 30 CHECK (max_posting_age_days BETWEEN 0 AND 3650),
+  posting_date_policy TEXT NOT NULL DEFAULT 'allow_missing' CHECK (posting_date_policy IN ('require_date','allow_missing','ignore')),
+  repost_policy TEXT NOT NULL DEFAULT 'use_original' CHECK (repost_policy IN ('use_original','use_latest','exclude')),
+  official_sources_only BOOLEAN NOT NULL DEFAULT true,
+  verify_application_open BOOLEAN NOT NULL DEFAULT true,
+  allow_aggregator_discovery BOOLEAN NOT NULL DEFAULT true,
+  preferred_source_systems JSONB NOT NULL DEFAULT '["workday","adp","greenhouse","lever","smartrecruiters","successfactors","oracle","icims","ukg","dayforce","jobvite","ashby","avature","eightfold","phenom","employer"]'::jsonb,
   search_plan JSONB NOT NULL DEFAULT '{}'::jsonb,
   schedule_enabled BOOLEAN NOT NULL DEFAULT false,
   schedule_frequency TEXT NOT NULL DEFAULT 'weekly' CHECK (schedule_frequency IN ('daily','weekly','monthly')),
@@ -79,6 +86,7 @@ CREATE TABLE IF NOT EXISTS job_agent_results (
   source_url TEXT NOT NULL,
   final_url TEXT NOT NULL,
   source_host TEXT NOT NULL DEFAULT '',
+  source_system TEXT NOT NULL DEFAULT 'employer',
   requisition_id TEXT NOT NULL DEFAULT '',
   title TEXT NOT NULL,
   company TEXT NOT NULL DEFAULT '',
@@ -89,10 +97,14 @@ CREATE TABLE IF NOT EXISTS job_agent_results (
   compensation_max INTEGER,
   compensation_currency TEXT NOT NULL DEFAULT 'USD',
   date_posted DATE,
+  original_date_posted DATE,
+  posting_date_source TEXT NOT NULL DEFAULT '',
+  repost_detected BOOLEAN NOT NULL DEFAULT false,
   valid_through TIMESTAMPTZ,
   description_text TEXT NOT NULL DEFAULT '',
   official_source BOOLEAN NOT NULL DEFAULT false,
   active_verified BOOLEAN NOT NULL DEFAULT false,
+  application_open_verified BOOLEAN NOT NULL DEFAULT false,
   active_verified_at TIMESTAMPTZ,
   fit_score INTEGER NOT NULL DEFAULT 0 CHECK (fit_score BETWEEN 0 AND 100),
   recommended BOOLEAN NOT NULL DEFAULT false,
@@ -110,7 +122,19 @@ CREATE TABLE IF NOT EXISTS job_agent_results (
   raw_data JSONB NOT NULL DEFAULT '{}'::jsonb,
   UNIQUE (owner_key, agent_id, canonical_key)
 );
+ALTER TABLE job_search_agents ADD COLUMN IF NOT EXISTS max_posting_age_days INTEGER NOT NULL DEFAULT 30;
+ALTER TABLE job_search_agents ADD COLUMN IF NOT EXISTS posting_date_policy TEXT NOT NULL DEFAULT 'allow_missing';
+ALTER TABLE job_search_agents ADD COLUMN IF NOT EXISTS repost_policy TEXT NOT NULL DEFAULT 'use_original';
+ALTER TABLE job_search_agents ADD COLUMN IF NOT EXISTS official_sources_only BOOLEAN NOT NULL DEFAULT true;
+ALTER TABLE job_search_agents ADD COLUMN IF NOT EXISTS verify_application_open BOOLEAN NOT NULL DEFAULT true;
+ALTER TABLE job_search_agents ADD COLUMN IF NOT EXISTS allow_aggregator_discovery BOOLEAN NOT NULL DEFAULT true;
+ALTER TABLE job_search_agents ADD COLUMN IF NOT EXISTS preferred_source_systems JSONB NOT NULL DEFAULT '["workday","adp","greenhouse","lever","smartrecruiters","successfactors","oracle","icims","ukg","dayforce","jobvite","ashby","avature","eightfold","phenom","employer"]'::jsonb;
+ALTER TABLE job_agent_results ADD COLUMN IF NOT EXISTS source_system TEXT NOT NULL DEFAULT 'employer';
 ALTER TABLE job_agent_results ADD COLUMN IF NOT EXISTS requisition_id TEXT NOT NULL DEFAULT '';
+ALTER TABLE job_agent_results ADD COLUMN IF NOT EXISTS original_date_posted DATE;
+ALTER TABLE job_agent_results ADD COLUMN IF NOT EXISTS posting_date_source TEXT NOT NULL DEFAULT '';
+ALTER TABLE job_agent_results ADD COLUMN IF NOT EXISTS repost_detected BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE job_agent_results ADD COLUMN IF NOT EXISTS application_open_verified BOOLEAN NOT NULL DEFAULT false;
 
 CREATE INDEX IF NOT EXISTS idx_job_agent_results_owner ON job_agent_results(owner_key, last_seen_at DESC);
 CREATE INDEX IF NOT EXISTS idx_job_agent_results_agent ON job_agent_results(agent_id, last_seen_at DESC);

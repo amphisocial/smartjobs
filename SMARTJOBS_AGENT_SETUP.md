@@ -18,6 +18,14 @@ The ZIP contains only new or changed files. Extract it over the root of your loc
   5. U.S.-remote roles
 - Public-web discovery with optional Serper or Brave Search support and a no-key Bing RSS fallback.
 - Employer/ATS-page verification before a result is retained.
+- Persisted posting-date and source policy per agent:
+  - configurable maximum posting age
+  - require, allow-and-flag, or ignore missing official dates
+  - use earliest/original date, use latest official date, or exclude detected reposts
+  - official employer/ATS source requirement
+  - active application verification
+  - aggregator discovery clues without accepting aggregators as proof
+  - preferred source systems including Workday, ADP, Greenhouse, Lever, SmartRecruiters, SuccessFactors, Oracle, iCIMS, UKG, Dayforce, Jobvite, Ashby, Avature, Eightfold, Phenom, and direct employer pages
 - AI fit scoring with mandatory versus preferred qualifications and material gaps.
 - Human actions: Apply in a new tab, Approve, Save, Reject, and Mark applied.
 - Five manual runs per day for free users.
@@ -128,6 +136,45 @@ SMTP_HELO_NAME=smartjobs.yourdomain.com
 
 Bing RSS enables a working no-key setup. For heavier production use, Serper or Brave is recommended because public search HTML/RSS availability can change independently of SmartJobs.
 
+
+## Posting-date and source-policy behavior
+
+These settings are stored in PostgreSQL for each agent and are editable from the **Posting recency and source verification** card.
+
+### Posting date
+
+SmartJobs reads dates only from the official employer/ATS page, including JobPosting JSON-LD, date metadata, and recognized embedded posting fields. Search-engine and aggregator timestamps are retained only as diagnostic discovery data and never become the official posting date.
+
+- **Maximum posting age:** 7, 14, 30, 60, 90 days, or any age.
+- **Missing posting date:** require an official date, allow the role but flag the missing date, or ignore posting dates.
+- **Reposted roles:** use the earliest detected official date, use the latest official date, or exclude a role when materially different official dates indicate a repost.
+
+The results table stores both the effective `date_posted` and `original_date_posted`, plus the metadata source and a repost flag.
+
+### Official sources and active status
+
+The default source policy requires a direct employer career page or recognized official ATS page. Supported ATS detection includes:
+
+- Workday
+- ADP Workforce Now and ADP Recruiting
+- Greenhouse
+- Lever
+- SmartRecruiters
+- SAP SuccessFactors
+- Oracle Recruiting
+- iCIMS
+- UKG/UltiPro
+- Dayforce
+- Jobvite
+- Ashby
+- Avature
+- Eightfold
+- Phenom
+
+The verifier follows redirects, rejects known aggregator hosts as proof, rejects closed/expired pages, checks `validThrough` when available, and requires JobPosting/apply evidence when **Verify the page still shows an open application** is enabled.
+
+When **Allow aggregators only as discovery clues** is enabled, SmartJobs may use an aggregator result to formulate an exact title/company search, but it retains a role only after resolving it back to an official employer or ATS page.
+
 ## Google OAuth
 
 The feature reuses the existing Google Identity Services setup and `/api/recruiter/auth/google` endpoint. Add the deployed SmartJobs origin to the Google OAuth client's authorized JavaScript origins if it is not already there.
@@ -203,8 +250,10 @@ Then verify:
 ## Operational notes
 
 - The process never submits a job application automatically.
-- Discovery results are discarded unless the final page is an official ATS host or a plausible employer careers/jobs URL.
-- Known aggregators are not accepted as proof that a posting is open.
+- Discovery results are discarded unless they satisfy the saved agent source policy.
+- Known aggregators are never accepted as proof that a posting is open; when enabled, they are used only to locate an official page.
+- Search-engine timestamps are not treated as official posting dates.
+- The selected original/repost policy and maximum age are enforced before fit scoring.
 - The scheduler uses a PostgreSQL advisory lock, so multiple PM2 workers do not run the same scheduling batch concurrently.
 - Interrupted runs older than two hours are marked failed during startup.
 - Search and verification errors are stored in `job_agent_runs.error_messages` and shown through run status; detailed errors also appear in PM2 logs.

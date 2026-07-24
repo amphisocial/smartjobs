@@ -2,7 +2,7 @@ SmartJobs Agentic Search Patch
 Base repository: https://github.com/amphisocial/smartjobs
 Base branch: main
 Base commit: 16a85877fbf3356cdbf4f4aa93599a46a9ff9b06
-Build date: 2026-07-23
+Build date: 2026-07-24
 
 Contents: new and changed files only. Extract over the repository root.
 Validation performed:
@@ -10,6 +10,9 @@ Validation performed:
 - package.json JSON parse
 - HTML/JavaScript ID-reference validation
 - deterministic city-first coverage test
+- persisted posting-date/source-policy coverage test
+- ADP/Workday/Greenhouse/Lever and employer-source classification test
+- original-versus-repost date-policy test
 - schedule calculation tests for daily/weekly/monthly America/New_York
 - module-load test using isolated dependency stubs
 - secret/local-path scan
@@ -19,21 +22,21 @@ Live external search, Stripe, Google, PostgreSQL, and SMTP calls require the ser
 
 SHA-256 checksums (excluding this manifest):
 a3ef3a15fc97fd58ef24c2971e3dd808ccb7462deefa7d5a7afc96e0c568a3e0  ./.env.example
-50c6f296680680502a45e338194fc79b91c91572ef3e97f1d4f34d9afb0cb798  ./CHANGED_FILES_AGENT.txt
-bd78b10c534e22c218f146c2b970bb9ddd273515708f43412348c994997a211d  ./SMARTJOBS_AGENT_SETUP.md
+ecca37a4459156867fdaf68b84d61c05f8bf50a1dc5b3fc3a1c2c89e1c6d06d4  ./CHANGED_FILES_AGENT.txt
+20744c47f8dcaadaae7f8ed4a7737fe1308dbcfc45a51e207852a0d4d0dff1bd  ./SMARTJOBS_AGENT_SETUP.md
 c20d257053da0ab769b5eefbb2aa343628ff94c457ba9a2f49bec3c138464056  ./config.js
-fb509a44cf8e73fa9528a8470bee1b8d79d5e1ce3994f4c443801c4110d07ae1  ./db/job_agent_schema.sql
+a61071eedcf3f31a41634c35a7d9c13a647fa62b1cfc1c0dfd7dc2c49eec8e68  ./db/job_agent_schema.sql
 f19fb2dbace6af0e99c0af9538d668e913381be8b44a3820e536aa2631dfaff4  ./lib/billing.js
-5ffbce7652708788b2650367963a693d0a729b91ade54b98e4d83d0159cb4c6c  ./lib/job-agent-prompts.js
+f1de982b768f8c78251ca53e6fa30ee21f80cdd34474b0199d3320d11f468a9f  ./lib/job-agent-prompts.js
 b399ec4d2d347c41da946965c222a627fa14544e110dcc4c500b14a15d6c15a1  ./lib/job-agent-routes.js
-5fd27339a96b6e71fedae6ce7fa4b439971521eae9920cd3abcc3e5f69a72b62  ./lib/job-agent-service.js
-aa9a5057fa17f690d958595f8c736e2696b980191686ed382e7030e878be4005  ./lib/job-agent-store.js
-2abcc0ddf3973bceeaf7fdf20af2ff2ca100f9d97c0407706bdc55e4089dde75  ./lib/job-search-engine.js
-bff0fa1c6640afec92dc9099da108ceffa5d0d22d1ac0cee65536f49534be244  ./lib/smtp-mailer.js
-d1f9350d7d283926a72fd2ac479b7083e95cf9d9a70e66acbc3d608bf96aa4a2  ./package.json
+b5104e033d57fcb053771a7447226e770c2cc8722ed2ef1322f5e030d21e9939  ./lib/job-agent-service.js
+126340d35ea3c724fd28f3e9e6dc8445ba674da8d51205c304b42acca6baa073  ./lib/job-agent-store.js
+c137a99070b336c94908176f6137bc047dc11d69b208dec473ef551cc894d830  ./lib/job-search-engine.js
+7c2fc118eeffd2a49e257467c9c6644534ef2504b0a7fec83ad66a4179f6cdae  ./lib/smtp-mailer.js
+9532017dad39c8372d6fa3877e042f0dbb7dffa43d9490ea06c309a388e3a0da  ./package.json
 d9e54306a03ba224a5942b94d06ae47837c2146315b4d01ece832f6a77f3dd55  ./public/index.html
 4d26a47eb286b6613b67e998a273d4679153e239412ab04044bb6d6734b81480  ./public/job-agent.css
-f72b109f6d7e14a2555133282ced479e9f7d7466c9785cc144d1beb320d349fa  ./public/job-agent.html
-e08efcd3a7c119e5a37d88532ae9546a121586b18df6861500bf094acf60aec9  ./public/job-agent.js
+c7bd7c79fccd0f6cddb41c803b10fb265fe64f02522bb881c1fc2991f3305374  ./public/job-agent.html
+0346be9bf0d5b5f85215e26c9b7bf4c563f76c80271ba1ea126f0a3051747ef4  ./public/job-agent.js
 a4a16cd04d75e9a6969698487fa6a8e7002cb7e5b87c7d7645f44e0aae9199fe  ./scripts/init-job-agent-db.js
 23bf8d3871c3cd5495005b332663d1ee8f07f70937519e0426068b1e4b5845d3  ./server.js

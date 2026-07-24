@@ -68,6 +68,9 @@
       states: ["Massachusetts", "New York", "Connecticut", "Maine", "New Hampshire"],
       regions: ["New England", "Northeast", "Mid-Atlantic"], remote_eligible: true,
       min_base_compensation: 225000, min_total_compensation: 250000, max_results: 25,
+      max_posting_age_days: 30, posting_date_policy: "allow_missing", repost_policy: "use_original",
+      official_sources_only: true, verify_application_open: true, allow_aggregator_discovery: true,
+      preferred_source_systems: ["workday", "adp", "greenhouse", "lever", "smartrecruiters", "successfactors", "oracle", "icims", "ukg", "dayforce", "jobvite", "ashby", "avature", "eightfold", "phenom", "employer"],
       schedule_enabled: false, schedule_frequency: "weekly", schedule_time: "07:00", schedule_day: 1,
       timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "America/New_York", email_enabled: true, digest_hour: 20,
       search_plan: {}, is_active: true,
@@ -93,6 +96,13 @@
     $("minBase").value = a.min_base_compensation || "";
     $("minTotal").value = a.min_total_compensation || "";
     $("maxResults").value = a.max_results || 25;
+    $("maxPostingAgeDays").value = String(a.max_posting_age_days ?? 30);
+    $("postingDatePolicy").value = a.posting_date_policy || "allow_missing";
+    $("repostPolicy").value = a.repost_policy || "use_original";
+    $("officialSourcesOnly").checked = a.official_sources_only !== false;
+    $("verifyApplicationOpen").checked = a.verify_application_open !== false;
+    $("allowAggregatorDiscovery").checked = a.allow_aggregator_discovery !== false;
+    $("preferredSourceSystems").value = listText(a.preferred_source_systems?.length ? a.preferred_source_systems : emptyAgent().preferred_source_systems);
     $("scheduleEnabled").checked = Boolean(a.schedule_enabled);
     $("scheduleFrequency").value = a.schedule_frequency || "weekly";
     $("scheduleDay").dataset.value = String(a.schedule_day ?? 1);
@@ -126,6 +136,13 @@
       minBaseCompensation: $("minBase").value ? Number($("minBase").value) : null,
       minTotalCompensation: $("minTotal").value ? Number($("minTotal").value) : null,
       maxResults: Number($("maxResults").value || 25),
+      maxPostingAgeDays: Number($("maxPostingAgeDays").value || 0),
+      postingDatePolicy: $("postingDatePolicy").value,
+      repostPolicy: $("repostPolicy").value,
+      officialSourcesOnly: $("officialSourcesOnly").checked,
+      verifyApplicationOpen: $("verifyApplicationOpen").checked,
+      allowAggregatorDiscovery: $("allowAggregatorDiscovery").checked,
+      preferredSourceSystems: splitList($("preferredSourceSystems").value).map(v => v.toLowerCase()),
       scheduleEnabled: $("scheduleEnabled").checked,
       scheduleFrequency: $("scheduleFrequency").value,
       scheduleDay: Number($("scheduleDay").value || 1),
@@ -213,8 +230,10 @@
             <span class="chip fit">Fit ${Number(result.fit_score || 0)}%</span>
             ${result.recommended ? '<span class="chip recommended">Recommended</span>' : ""}
             <span class="chip">${esc(compensation)}</span>
-            <span class="chip">Posted ${esc(result.date_posted || "date unavailable")}</span>
-            <span class="chip">Verified ${esc(result.source_host)}</span>
+            <span class="chip">Posted ${esc(result.date_posted || "date unavailable")}${result.repost_detected ? " · repost detected" : ""}</span>
+            ${result.original_date_posted && result.original_date_posted !== result.date_posted ? `<span class="chip">Original ${esc(result.original_date_posted)}</span>` : ""}
+            <span class="chip">${esc(result.source_system || "employer")} · ${esc(result.source_host)}</span>
+            <span class="chip">${result.application_open_verified ? "Application open verified" : "Open status not explicit"}</span>
           </div>
         </div><span class="workflow-badge">${esc(result.workflow_status)}</span></div>
         <div class="fit-summary">${esc(result.fit_summary || result.evaluation_reason || "Verified active posting ready for review.")}</div>
