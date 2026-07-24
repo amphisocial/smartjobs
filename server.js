@@ -16,6 +16,9 @@ import { createCheckoutSession, resolvePaidSession, constructWebhookEvent } from
 import { checkAndConsume, consumeLive } from "./lib/ratelimit.js";
 import { installRecruiterRoutes } from "./lib/recruiter-routes.js";
 import { recruiterDbReady } from "./lib/recruiter-store.js";
+import { installJobAgentRoutes } from "./lib/job-agent-routes.js";
+import { jobAgentDbReady } from "./lib/job-agent-store.js";
+import { smtpConfigured } from "./lib/smtp-mailer.js";
 
 assertConfig();
 await initStore();
@@ -45,8 +48,9 @@ app.use(express.json({ limit: "12mb" }));
 app.use((req, res, next) => { if (req.path === "/" || req.path.endsWith(".html")) res.set("Cache-Control", "no-cache, no-store, must-revalidate"); next(); });
 app.use(express.static(path.join(__dirname, "public")));
 
-// Persistent recruiter workspace routes and schema initialization.
+// Persistent recruiter and candidate job-agent workspaces.
 await installRecruiterRoutes(app);
+await installJobAgentRoutes(app);
 
 app.get("/healthz", (_req, res) => res.json({
   ok: true,
@@ -55,11 +59,19 @@ app.get("/healthz", (_req, res) => res.json({
   stripeMode: config.stripe.mode,
   databaseConfigured: Boolean(config.databaseUrl),
   recruiterDatabaseReady: recruiterDbReady(),
+  jobAgentDatabaseReady: jobAgentDbReady(),
+  jobAgentSchedulerEnabled: config.jobAgentSchedulerEnabled,
+  smtpConfigured: smtpConfigured(),
   googleAuthConfigured: googleAuthEnabled(),
   recruiterLimits: {
     jobs: config.recruiterFreeJobsDaily,
     ranks: config.recruiterFreeRankRunsDaily,
     interviews: config.recruiterFreeInterviewsDaily,
+  },
+  jobAgentLimits: {
+    freeRunsDaily: config.jobAgentFreeRunsDaily,
+    maxQueries: config.jobAgentMaxQueries,
+    maxDiscovered: config.jobAgentMaxDiscovered,
   },
 }));
 app.get("/api/config", (_req, res) => res.json({
@@ -71,6 +83,10 @@ app.get("/api/config", (_req, res) => res.json({
     jobs: config.recruiterFreeJobsDaily,
     ranks: config.recruiterFreeRankRunsDaily,
     interviews: config.recruiterFreeInterviewsDaily,
+  },
+  jobAgentLimits: {
+    freeRunsDaily: config.jobAgentFreeRunsDaily,
+    schedulingAvailableForPaidMembers: true,
   },
 }));
 
@@ -294,5 +310,5 @@ app.post("/api/hr/talking-points", async (req, res) => { try { const { jd, candi
 
 app.listen(config.port, () => {
   const w = billingModeWarning(); if (w) console.warn("[billing] WARNING:", w);
-  console.log(`rolefit up on :${config.port} — provider=${activeProvider()} billing=${billingEnabled()} stripeMode=${config.stripe.mode}`);
+  console.log(`rolefit up on :${config.port} — provider=${activeProvider()} billing=${billingEnabled()} stripeMode=${config.stripe.mode} jobAgentDb=${jobAgentDbReady()}`);
 });

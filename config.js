@@ -15,6 +15,12 @@ function positiveInt(name, fallback) {
   return Number.isFinite(value) && value > 0 ? value : fallback;
 }
 
+function booleanVar(name, fallback = false) {
+  const raw = process.env[name];
+  if (raw == null || raw === "") return fallback;
+  return ["1", "true", "yes", "on"].includes(String(raw).toLowerCase().trim());
+}
+
 export const config = {
   provider: (process.env.AI_PROVIDER || "openai").toLowerCase().trim(),
   freeDailyLimit: positiveInt("FREE_DAILY_LIMIT", 3),
@@ -24,6 +30,21 @@ export const config = {
   recruiterFreeJobsDaily: positiveInt("RECRUITER_FREE_JOBS_DAILY", 5),
   recruiterFreeRankRunsDaily: positiveInt("RECRUITER_FREE_RANK_RUNS_DAILY", 5),
   recruiterFreeInterviewsDaily: positiveInt("RECRUITER_FREE_INTERVIEWS_DAILY", 5),
+
+  // Candidate job-search agent limits and workflow controls.
+  jobAgentFreeRunsDaily: positiveInt("JOB_AGENT_FREE_RUNS_DAILY", 5),
+  jobAgentMaxQueries: positiveInt("JOB_AGENT_MAX_QUERIES", 36),
+  jobAgentMaxDiscovered: positiveInt("JOB_AGENT_MAX_DISCOVERED", 100),
+  jobAgentVerifyConcurrency: positiveInt("JOB_AGENT_VERIFY_CONCURRENCY", 5),
+  jobAgentSearchTimeoutMs: positiveInt("JOB_AGENT_SEARCH_TIMEOUT_MS", 15000),
+  jobAgentSchedulerEnabled: booleanVar("JOB_AGENT_SCHEDULER_ENABLED", true),
+  jobAgentSchedulerIntervalMinutes: positiveInt("JOB_AGENT_SCHEDULER_INTERVAL_MINUTES", 15),
+  jobAgentSchedulerBatchSize: positiveInt("JOB_AGENT_SCHEDULER_BATCH_SIZE", 4),
+  jobAgentSearchProvider: (process.env.JOB_AGENT_SEARCH_PROVIDER || "auto").toLowerCase().trim(),
+  jobAgentSearchRssUrl: (process.env.JOB_AGENT_SEARCH_RSS_URL || "https://www.bing.com/search").trim(),
+  serperApiKey: (process.env.SERPER_API_KEY || "").trim(),
+  braveSearchApiKey: (process.env.BRAVE_SEARCH_API_KEY || "").trim(),
+  appBaseUrl: (process.env.APP_BASE_URL || "").trim(),
 
   // Google Identity Services. No Google client secret is required for ID-token sign-in.
   googleClientId: (process.env.GOOGLE_CLIENT_ID || "").trim(),
@@ -49,7 +70,23 @@ export const config = {
   },
 
   databaseUrl: (process.env.DATABASE_URL || "").trim(),
+  // Optional dedicated SmartJobs database. Falls back to DATABASE_URL.
+  jobAgentDatabaseUrl: (process.env.SMARTJOBS_DATABASE_URL || "").trim(),
   pgSsl: (process.env.PGSSL || "false").toLowerCase() === "true",
+
+  smtp: {
+    host: (process.env.SMTP_HOST || "").trim(),
+    port: positiveInt("SMTP_PORT", 587),
+    secure: booleanVar("SMTP_SECURE", false),
+    startTls: booleanVar("SMTP_STARTTLS", true),
+    rejectUnauthorized: booleanVar("SMTP_REJECT_UNAUTHORIZED", true),
+    user: (process.env.SMTP_USER || "").trim(),
+    password: process.env.SMTP_PASSWORD || "",
+    from: (process.env.SMTP_FROM || "").trim(),
+    fromAddress: (process.env.SMTP_FROM_ADDRESS || "").trim(),
+    heloName: (process.env.SMTP_HELO_NAME || "smartjobs.local").trim(),
+  },
+
   port: Number.parseInt(process.env.PORT || "3000", 10),
 };
 

@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>SmartJobs Agent — verified job monitoring</title>
+  <meta name="description" content="Create a city-first AI job-search agent, review verified official postings, and track applications." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/job-agent.css" />
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+</head>
+<body>
+  <header class="topbar">
+    <a href="/" class="brand">Smart<span>Jobs</span></a>
+    <nav>
+      <a href="/candidate.html">Candidate tools</a>
+      <a href="/tracker.html">Applications</a>
+      <a href="/hr.html">Recruiter</a>
+      <a href="#" id="rfMember">Membership</a>
+    </nav>
+    <div class="account-zone">
+      <span id="rfCredits" class="credits">5 free runs/day</span>
+      <div id="recruiterAccount" class="account hidden">
+        <img id="recruiterAccountPicture" class="avatar hidden" alt="" />
+        <span id="recruiterAccountName"></span>
+      </div>
+      <button id="recruiterSignOut" class="link-button hidden">Sign out</button>
+    </div>
+  </header>
+
+  <section id="signInGate" class="signin-card">
+    <div class="eyebrow">Agentic job search</div>
+    <h1>Search deeply. Verify officially. Keep the human in control.</h1>
+    <p>Build a reusable job-search agent that searches priority cities first, then states, regions, and U.S.-remote roles. Every result stays reviewable before you apply.</p>
+    <div id="googleSignInButton"></div>
+    <div id="googleAuthMessage" class="message"></div>
+  </section>
+
+  <main id="workspace" class="workspace hidden">
+    <aside class="sidebar">
+      <div class="side-title">
+        <div>
+          <span class="eyebrow">Saved monitoring</span>
+          <h2>Your agents</h2>
+        </div>
+        <button id="newAgent" class="icon-button" title="New agent">＋</button>
+      </div>
+      <div id="agentList" class="agent-list"></div>
+      <div class="quota-card">
+        <strong id="quotaTitle">Free plan</strong>
+        <span id="quotaText">5 manual agent runs per day.</span>
+        <button id="upgradeSchedule" class="secondary-button">Unlock scheduled monitoring</button>
+      </div>
+    </aside>
+
+    <section class="main-column">
+      <div class="tabs">
+        <button class="tab active" data-tab="configure">Configure</button>
+        <button class="tab" data-tab="results">Results <span id="resultCount" class="count">0</span></button>
+        <button class="tab" data-tab="monitoring">Monitoring</button>
+      </div>
+
+      <section id="tab-configure" class="tab-panel active">
+        <div class="panel-heading">
+          <div>
+            <span class="eyebrow">Human-guided workflow</span>
+            <h1 id="formHeading">Create a job-search agent</h1>
+            <p>The order matters: applicant profile → titles → priority cities → states/regions → remote.</p>
+          </div>
+          <div class="actions">
+            <button id="deleteAgent" class="danger-link hidden">Delete</button>
+            <button id="saveAgent" class="secondary-button">Save agent</button>
+            <button id="runAgent" class="primary-button">Run now</button>
+          </div>
+        </div>
+
+        <div id="formMessage" class="message"></div>
+        <input type="hidden" id="agentId" />
+
+        <section class="form-card">
+          <div class="step-number">1</div>
+          <div class="form-content">
+            <h3>Applicant profile</h3>
+            <p>Paste a resume or a detailed career summary. This becomes the source of truth for fit scoring.</p>
+            <label>Agent name<input id="agentName" value="Executive technology search" maxlength="160" /></label>
+            <label>Resume / profile summary<textarea id="profileSummary" rows="12" placeholder="Paste the applicant's resume, leadership scope, accomplishments, industries, systems, and constraints."></textarea></label>
+            <div class="inline-upload">
+              <input id="profileFile" type="file" accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" />
+              <button id="readProfileFile" class="small-button">Read PDF / Word</button>
+              <span id="fileStatus"></span>
+            </div>
+            <div class="grid two">
+              <label>Preferred industries<textarea id="industries" rows="4" placeholder="Life sciences&#10;Advanced manufacturing&#10;Aerospace & defense"></textarea></label>
+              <label>Role and domain keywords<textarea id="roleKeywords" rows="4" placeholder="ERP&#10;Digital manufacturing&#10;AI transformation&#10;Enterprise applications"></textarea></label>
+            </div>
+          </div>
+        </section>
+
+        <section class="form-card">
+          <div class="step-number">2</div>
+          <div class="form-content">
+            <h3>Title preferences</h3>
+            <p>Use one title per line. The AI expands these into close variants rather than relying on one broad keyword search.</p>
+            <div class="grid two">
+              <label>Target titles<textarea id="targetTitles" rows="9" placeholder="Chief Information Officer&#10;Divisional CIO&#10;VP Information Technology&#10;Head of IT&#10;Senior Director Business Applications"></textarea></label>
+              <div>
+                <label>Preferred title terms<textarea id="preferredTitles" rows="4" placeholder="enterprise platforms&#10;business technology&#10;commercial technology"></textarea></label>
+                <label>Exclude title / domain terms<textarea id="excludedTitles" rows="4" placeholder="clinical physician&#10;banking-only&#10;insurance-only"></textarea></label>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="form-card">
+          <div class="step-number">3</div>
+          <div class="form-content">
+            <h3>City-first geography</h3>
+            <p>Priority cities run first in the order entered. Broader regions and remote searches run afterward.</p>
+            <div class="grid three">
+              <label>Priority cities<textarea id="priorityCities" rows="9" placeholder="Boston, MA&#10;Cambridge, MA&#10;Somerville, MA&#10;New York, NY&#10;Washington, DC"></textarea></label>
+              <label>States<textarea id="states" rows="9" placeholder="Massachusetts&#10;New York&#10;Connecticut&#10;Maine&#10;New Hampshire"></textarea></label>
+              <label>Regions<textarea id="regions" rows="9" placeholder="New England&#10;Northeast&#10;Mid-Atlantic"></textarea></label>
+            </div>
+            <label class="check"><input id="remoteEligible" type="checkbox" checked /> Include U.S.-remote roles as the final search wave</label>
+          </div>
+        </section>
+
+        <section class="form-card">
+          <div class="step-number">4</div>
+          <div class="form-content">
+            <h3>Compensation and result controls</h3>
+            <div class="grid three">
+              <label>Minimum base compensation<input id="minBase" type="number" min="0" step="5000" value="225000" /></label>
+              <label>Minimum total compensation<input id="minTotal" type="number" min="0" step="5000" value="250000" /></label>
+              <label>Maximum results per run<input id="maxResults" type="number" min="5" max="75" value="25" /></label>
+            </div>
+            <label>Exclude keywords<textarea id="excludedKeywords" rows="3" placeholder="mandatory Epic certification&#10;physician license&#10;retail branch banking"></textarea></label>
+          </div>
+        </section>
+
+        <section class="form-card">
+          <div class="step-number">5</div>
+          <div class="form-content">
+            <div class="section-inline">
+              <div><h3>Search plan and monitoring</h3><p>Generate a preview, edit preferences, save, and schedule the agent.</p></div>
+              <button id="generatePlan" class="secondary-button">Generate search plan</button>
+            </div>
+            <pre id="planPreview" class="plan-preview">Save the agent, then generate its city-first search plan.</pre>
+            <div class="schedule-box">
+              <label class="check"><input id="scheduleEnabled" type="checkbox" /> Run automatically <span class="paid-pill">Paid</span></label>
+              <div id="scheduleControls" class="grid four muted-controls">
+                <label>Frequency<select id="scheduleFrequency"><option value="daily">Daily</option><option value="weekly" selected>Weekly</option><option value="monthly">Monthly</option></select></label>
+                <label>Day<select id="scheduleDay"></select></label>
+                <label>Run time<input id="scheduleTime" type="time" value="07:00" /></label>
+                <label>Time zone<input id="timezone" value="America/New_York" /></label>
+              </div>
+              <div class="grid two">
+                <label class="check"><input id="emailEnabled" type="checkbox" checked /> Email a nightly summary of new recommended matches</label>
+                <label>Digest hour<select id="digestHour"></select></label>
+              </div>
+              <div id="smtpNote" class="hint"></div>
+            </div>
+          </div>
+        </section>
+      </section>
+
+      <section id="tab-results" class="tab-panel">
+        <div class="panel-heading compact">
+          <div><span class="eyebrow">Human review queue</span><h1>Verified results</h1><p>SmartJobs never applies automatically. You decide what to save, reject, open, or mark applied.</p></div>
+          <div class="filters">
+            <select id="resultAgentFilter"><option value="">All agents</option></select>
+            <select id="resultStatusFilter"><option value="">All statuses</option><option value="new">New</option><option value="saved">Saved</option><option value="approved">Approved</option><option value="applied">Applied</option><option value="rejected">Rejected</option></select>
+            <label class="check small"><input id="recommendedOnly" type="checkbox" /> Recommended only</label>
+          </div>
+        </div>
+        <div id="resultsList" class="results-list"></div>
+      </section>
+
+      <section id="tab-monitoring" class="tab-panel">
+        <div class="panel-heading compact"><div><span class="eyebrow">Scheduled workflow</span><h1>Monitoring status</h1><p>Review saved schedules, next runs, completion counts, and email readiness.</p></div></div>
+        <div id="monitoringList" class="monitoring-list"></div>
+        <h2 class="run-heading">Recent runs</h2>
+        <div id="runList" class="run-list"></div>
+      </section>
+    </section>
+  </main>
+
+  <script src="/app-billing.js"></script>
+  <script src="/recruiter-auth.js"></script>
+  <script src="/job-agent.js"></script>
+</body>
+</html>

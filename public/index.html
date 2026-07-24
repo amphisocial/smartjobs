@@ -4,148 +4,29 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>RoleFit — land the role, or hire the right one</title>
-<meta name="description" content="AI job-fit toolkit. Job seekers: ATS resume, fit score, prep plan, mock interview. Recruiters: rank resumes and screen smarter." />
+<meta name="description" content="AI job-fit toolkit and agentic job monitoring. Build verified job searches, optimize resumes, prepare for interviews, and screen candidates." />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
 <style>
-  :root{--bg:#F4F6F9;--card:#fff;--ink:#0F172A;--muted:#64748B;--line:#E7EAEF;--ind:#4F46E5;--ind-d:#4338CA;--teal:#0EA5A4;--soft:#EEF0FE}
-  *{box-sizing:border-box;margin:0;padding:0}
-  body{font-family:"Inter",system-ui,sans-serif;background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased;line-height:1.5}
-  a{color:inherit}
-  .wrap{max-width:1040px;margin:0 auto;padding:0 22px}
-  /* nav */
-  nav{display:flex;align-items:center;justify-content:space-between;padding:20px 0}
-  .logo{font-weight:900;font-size:21px;letter-spacing:-.03em;text-decoration:none}
-  .logo b{color:var(--ind)}
-  .navlinks{display:flex;gap:8px}
-  .navlinks a{text-decoration:none;font-size:14px;font-weight:600;padding:9px 15px;border-radius:10px;transition:.14s}
-  .navlinks .ghost{color:var(--ink)}.navlinks .ghost:hover{background:#fff}
-  .navlinks .solid{background:var(--ink);color:#fff}.navlinks .solid:hover{background:#1e293b}
-  /* hero */
-  .hero{position:relative;text-align:center;padding:60px 0 48px;overflow:hidden}
-  .hero .glow{position:absolute;top:-120px;left:50%;transform:translateX(-50%);width:680px;height:420px;background:radial-gradient(closest-side,rgba(79,70,229,.16),transparent 70%),radial-gradient(closest-side,rgba(14,165,164,.12),transparent 70%);filter:blur(6px);z-index:0}
-  .hero>*{position:relative;z-index:1}
-  .badge{display:inline-flex;align-items:center;gap:7px;background:#fff;border:1px solid var(--line);color:var(--muted);font-size:12.5px;font-weight:600;padding:6px 13px;border-radius:30px}
-  .badge .dot{width:7px;height:7px;border-radius:50%;background:var(--teal)}
-  h1{margin-top:20px;font-size:clamp(34px,6.4vw,58px);font-weight:900;letter-spacing:-.04em;line-height:1.02}
-  h1 .g{background:linear-gradient(100deg,var(--ind),var(--teal));-webkit-background-clip:text;background-clip:text;color:transparent}
-  .lead{margin:18px auto 0;max-width:60ch;color:var(--muted);font-size:18px}
-  .ctas{margin-top:30px;display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
-  .btn{text-decoration:none;font-weight:700;font-size:15px;padding:14px 24px;border-radius:13px;transition:.14s;display:inline-flex;align-items:center;gap:8px}
-  .btn.primary{background:var(--ind);color:#fff;box-shadow:0 14px 34px -16px rgba(79,70,229,.7)}
-  .btn.primary:hover{background:var(--ind-d);transform:translateY(-2px)}
-  .btn.tealb{background:var(--teal);color:#fff;box-shadow:0 14px 34px -16px rgba(14,165,164,.7)}
-  .btn.tealb:hover{filter:brightness(.95);transform:translateY(-2px)}
-  .trust{margin-top:20px;color:var(--muted);font-size:13px}
-  /* sides */
-  .sides{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:18px}
-  @media(max-width:720px){.sides{grid-template-columns:1fr}}
-  .side{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:26px;transition:.15s}
-  .side:hover{transform:translateY(-3px);box-shadow:0 22px 50px -30px rgba(15,23,42,.45)}
-  .side .ic{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:21px;color:#fff;margin-bottom:14px}
-  .side.c .ic{background:var(--ind)}.side.h .ic{background:var(--teal)}
-  .side h2{font-size:21px;font-weight:800;letter-spacing:-.02em}
-  .side .d{color:var(--muted);font-size:14px;margin-top:6px}
-  .feat{margin-top:16px;display:flex;flex-direction:column;gap:11px}
-  .feat .f{display:flex;gap:10px;align-items:flex-start;font-size:14px}
-  .feat .f .k{flex:0 0 auto;width:20px;height:20px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;margin-top:1px}
-  .side.c .f .k{background:var(--soft);color:var(--ind)}.side.h .f .k{background:#E6FBF8;color:var(--teal)}
-  .feat .f b{font-weight:600}.feat .f span{color:var(--muted)}
-  .side .go{margin-top:20px;display:inline-block;text-decoration:none;font-weight:700;font-size:14.5px;padding:12px 18px;border-radius:11px;color:#fff}
-  .side.c .go{background:var(--ind)}.side.h .go{background:var(--teal)}
-  /* how */
-  .how{margin-top:56px;text-align:center}
-  .how h3{font-size:13px;text-transform:uppercase;letter-spacing:.14em;color:var(--muted);font-weight:700}
-  .steps{margin-top:22px;display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
-  @media(max-width:720px){.steps{grid-template-columns:1fr}}
-  .step{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;text-align:left}
-  .step .n{font-weight:900;font-size:14px;color:var(--ind);letter-spacing:.02em}
-  .step h4{margin-top:8px;font-size:16px;font-weight:700}
-  .step p{margin-top:6px;color:var(--muted);font-size:13.5px}
-  /* pricing strip */
-  .price{margin-top:48px;background:linear-gradient(120deg,#101935,#1e2a52);color:#fff;border-radius:20px;padding:34px;text-align:center}
-  .price h3{font-size:26px;font-weight:800;letter-spacing:-.02em}
-  .price p{margin-top:8px;color:#c7cefc;font-size:15px}
-  .price .row{margin-top:18px;display:flex;gap:24px;justify-content:center;flex-wrap:wrap;font-size:14px;color:#e2e6ff}
-  .price .amt{font-size:40px;font-weight:900;letter-spacing:-.03em;margin-top:10px}
-  .price .amt small{font-size:16px;font-weight:600;color:#aeb6f0}
-  .price a{display:inline-block;margin-top:18px;background:#fff;color:#1e2a52;text-decoration:none;font-weight:800;padding:13px 26px;border-radius:13px}
-  /* footer */
-  footer{text-align:center;color:var(--muted);font-size:12.5px;padding:46px 0 40px;line-height:1.7;max-width:70ch;margin:0 auto}
+  :root{--bg:#F4F6F9;--card:#fff;--ink:#0F172A;--muted:#64748B;--line:#E7EAEF;--ind:#4F46E5;--ind-d:#4338CA;--teal:#0EA5A4;--amber:#D97706;--soft:#EEF0FE}
+  *{box-sizing:border-box;margin:0;padding:0}body{font-family:"Inter",system-ui,sans-serif;background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased;line-height:1.5}a{color:inherit}.wrap{max-width:1160px;margin:0 auto;padding:0 22px}
+  nav{display:flex;align-items:center;justify-content:space-between;padding:20px 0}.logo{font-weight:900;font-size:21px;letter-spacing:-.03em;text-decoration:none}.logo b{color:var(--ind)}.navlinks{display:flex;gap:8px;flex-wrap:wrap}.navlinks a{text-decoration:none;font-size:14px;font-weight:600;padding:9px 15px;border-radius:10px;transition:.14s}.navlinks .ghost{color:var(--ink)}.navlinks .ghost:hover{background:#fff}.navlinks .solid{background:var(--ink);color:#fff}.navlinks .agent{background:var(--ind);color:#fff}
+  .hero{position:relative;text-align:center;padding:60px 0 48px;overflow:hidden}.hero .glow{position:absolute;top:-120px;left:50%;transform:translateX(-50%);width:680px;height:420px;background:radial-gradient(closest-side,rgba(79,70,229,.16),transparent 70%),radial-gradient(closest-side,rgba(14,165,164,.12),transparent 70%);filter:blur(6px);z-index:0}.hero>*{position:relative;z-index:1}.badge{display:inline-flex;align-items:center;gap:7px;background:#fff;border:1px solid var(--line);color:var(--muted);font-size:12.5px;font-weight:600;padding:6px 13px;border-radius:30px}.badge .dot{width:7px;height:7px;border-radius:50%;background:var(--teal)}h1{margin-top:20px;font-size:clamp(34px,6.4vw,58px);font-weight:900;letter-spacing:-.04em;line-height:1.02}h1 .g{background:linear-gradient(100deg,var(--ind),var(--teal));-webkit-background-clip:text;background-clip:text;color:transparent}.lead{margin:18px auto 0;max-width:66ch;color:var(--muted);font-size:18px}.ctas{margin-top:30px;display:flex;gap:12px;justify-content:center;flex-wrap:wrap}.btn{text-decoration:none;font-weight:700;font-size:15px;padding:14px 24px;border-radius:13px;transition:.14s;display:inline-flex;align-items:center;gap:8px}.btn.primary{background:var(--ind);color:#fff;box-shadow:0 14px 34px -16px rgba(79,70,229,.7)}.btn.primary:hover{background:var(--ind-d);transform:translateY(-2px)}.btn.tealb{background:var(--teal);color:#fff}.btn.dark{background:var(--ink);color:#fff}.trust{margin-top:20px;color:var(--muted);font-size:13px}
+  .sides{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:18px}@media(max-width:900px){.sides{grid-template-columns:1fr}}.side{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:26px;transition:.15s}.side:hover{transform:translateY(-3px);box-shadow:0 22px 50px -30px rgba(15,23,42,.45)}.side .ic{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:21px;color:#fff;margin-bottom:14px}.side.c .ic{background:var(--ind)}.side.a .ic{background:var(--amber)}.side.h .ic{background:var(--teal)}.side h2{font-size:21px;font-weight:800;letter-spacing:-.02em}.side .d{color:var(--muted);font-size:14px;margin-top:6px}.feat{margin-top:16px;display:flex;flex-direction:column;gap:11px}.feat .f{display:flex;gap:10px;align-items:flex-start;font-size:14px}.feat .f .k{flex:0 0 auto;width:20px;height:20px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;margin-top:1px}.side.c .f .k{background:var(--soft);color:var(--ind)}.side.a .f .k{background:#fff7ed;color:var(--amber)}.side.h .f .k{background:#E6FBF8;color:var(--teal)}.feat .f b{font-weight:600}.feat .f span{color:var(--muted)}.side .go{margin-top:20px;display:inline-block;text-decoration:none;font-weight:700;font-size:14.5px;padding:12px 18px;border-radius:11px;color:#fff}.side.c .go{background:var(--ind)}.side.a .go{background:var(--amber)}.side.h .go{background:var(--teal)}
+  .how{margin-top:56px;text-align:center}.how h3{font-size:13px;text-transform:uppercase;letter-spacing:.14em;color:var(--muted);font-weight:700}.steps{margin-top:22px;display:grid;grid-template-columns:repeat(3,1fr);gap:16px}@media(max-width:720px){.steps{grid-template-columns:1fr}}.step{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;text-align:left}.step .n{font-weight:900;font-size:14px;color:var(--ind)}.step h4{margin-top:8px;font-size:16px;font-weight:700}.step p{margin-top:6px;color:var(--muted);font-size:13.5px}
+  .price{margin-top:48px;background:linear-gradient(120deg,#101935,#1e2a52);color:#fff;border-radius:20px;padding:34px;text-align:center}.price h3{font-size:26px;font-weight:800}.price p{margin-top:8px;color:#c7cefc;font-size:15px}.price .row{margin-top:18px;display:flex;gap:24px;justify-content:center;flex-wrap:wrap;font-size:14px;color:#e2e6ff}.price .amt{font-size:40px;font-weight:900;margin-top:10px}.price .amt small{font-size:16px;font-weight:600;color:#aeb6f0}.price a{display:inline-block;margin-top:18px;background:#fff;color:#1e2a52;text-decoration:none;font-weight:800;padding:13px 26px;border-radius:13px}footer{text-align:center;color:var(--muted);font-size:12.5px;padding:46px 0 40px;line-height:1.7;max-width:78ch;margin:0 auto}
 </style>
 </head>
-<body>
-  <div class="wrap">
-    <nav>
-      <a class="logo" href="/">Role<b>Fit</b></a>
-      <div class="navlinks">
-        <a class="ghost" href="/candidate.html">Job seekers</a>
-        <a class="solid" href="/hr.html">For recruiters</a>
-      </div>
-    </nav>
-
-    <section class="hero">
-      <div class="glow"></div>
-      <span class="badge"><span class="dot"></span> ATS-ready resumes · honest fit scores · mock interviews</span>
-      <h1>Close the gap between a<br><span class="g">resume</span> and the <span class="g">role</span>.</h1>
-      <p class="lead">For job seekers: an ATS-optimized resume, an honest fit score, a tailored prep plan, and a mock interview that talks back. For recruiters: rank a stack of resumes and walk into every screen prepared.</p>
-      <div class="ctas">
-        <a class="btn primary" href="/candidate.html">I'm job hunting →</a>
-        <a class="btn tealb" href="/hr.html">I'm hiring →</a>
-      </div>
-      <div class="trust">No sign-up to try · a few free runs daily · your text isn't stored</div>
-    </section>
-
-    <section class="sides">
-      <div class="side c">
-        <div class="ic">👤</div>
-        <h2>Job-seeker toolkit</h2>
-        <div class="d">Paste a job description and your resume once — then run any of these.</div>
-        <div class="feat">
-          <div class="f"><span class="k">1</span><div><b>Fit analysis</b> <span>— a 0–100 match score with the exact keywords you're missing.</span></div></div>
-          <div class="f"><span class="k">2</span><div><b>ATS resume</b> <span>— a clean, keyword-aligned rewrite you can download as a PDF.</span></div></div>
-          <div class="f"><span class="k">3</span><div><b>Prep plan</b> <span>— focus areas, skill gaps, and a study checklist for the role.</span></div></div>
-          <div class="f"><span class="k">4</span><div><b>Mock interview</b> <span>— tailored questions, per-answer feedback, a readiness score.</span></div></div>
-          <div class="f"><span class="k">5</span><div><b>Job tracker</b> <span>— track every application through the hiring cycle, with a stage-aware mock interview at each round.</span></div></div>
-        </div>
-        <a class="go" href="/candidate.html">Start landing the role →</a>
-      </div>
-
-      <div class="side h">
-        <div class="ic">🏢</div>
-        <h2>Recruiter toolkit</h2>
-        <div class="d">Paste the role and a stack of resumes — get a shortlist with reasons.</div>
-        <div class="feat">
-          <div class="f"><span class="k">1</span><div><b>Ranked shortlist</b> <span>— best-fit first, each with a score and a one-line why.</span></div></div>
-          <div class="f"><span class="k">2</span><div><b>Call / maybe / pass</b> <span>— a clear recommendation, with strengths and concerns.</span></div></div>
-          <div class="f"><span class="k">3</span><div><b>Screening questions</b> <span>— role-relevant questions tailored to each candidate.</span></div></div>
-          <div class="f"><span class="k">4</span><div><b>Talking points</b> <span>— an opener and what to probe for the first call.</span></div></div>
-        </div>
-        <a class="go" href="/hr.html">Start screening smarter →</a>
-      </div>
-    </section>
-
-    <section class="how">
-      <h3>How it works</h3>
-      <div class="steps">
-        <div class="step"><div class="n">01</div><h4>Paste or screenshot</h4><p>Drop in a job description and resume as text, or upload a screenshot — it reads both.</p></div>
-        <div class="step"><div class="n">02</div><h4>Pick a tool</h4><p>Fit score, ATS resume, prep plan, mock interview — or, for recruiters, rank your stack.</p></div>
-        <div class="step"><div class="n">03</div><h4>Act on it</h4><p>Download the PDF, fix the gaps, rehearse the answers, or call your shortlist.</p></div>
-      </div>
-    </section>
-
-    <section class="price">
-      <h3>Try it free. Go unlimited when it earns it.</h3>
-      <p>A few free runs every day — no account needed. Unlimited access to every tool when you're ready.</p>
-      <div class="amt">$4.99<small> / month</small></div>
-      <div class="row"><span>✓ Every candidate &amp; recruiter tool</span><span>✓ Unlimited runs</span><span>✓ Use on all your devices</span><span>✓ Cancel anytime</span></div>
-      <a href="/candidate.html">Start free →</a>
-    </section>
-
-    <footer>
-      RoleFit is decision-support, not a decision-maker. The resume tool never fabricates experience — it only surfaces and sharpens what's genuinely yours. Recruiter rankings judge job-relevant qualifications only, ignore demographic signals, and exist for a human to review. No tool can guarantee passing every ATS; RoleFit follows the well-established best practices.
-    </footer>
-  </div>
-</body>
-</html>
+<body><div class="wrap">
+<nav><a class="logo" href="/">Role<b>Fit</b></a><div class="navlinks"><a class="ghost" href="/candidate.html">Job seekers</a><a class="agent" href="/job-agent.html">Job-search agent</a><a class="solid" href="/hr.html">For recruiters</a></div></nav>
+<section class="hero"><div class="glow"></div><span class="badge"><span class="dot"></span> ATS-ready resumes · verified job monitoring · human-controlled applications</span><h1>Close the gap between a<br><span class="g">resume</span> and the <span class="g">role</span>.</h1><p class="lead">Build a city-first AI search agent, review verified official postings, sharpen your resume, and prepare for every interview—without surrendering the final decision to automation.</p><div class="ctas"><a class="btn primary" href="/job-agent.html">Build my search agent →</a><a class="btn dark" href="/candidate.html">Use candidate tools</a><a class="btn tealb" href="/hr.html">I'm hiring</a></div><div class="trust">Five free agent runs daily · paid members can schedule monitoring · SmartJobs never applies automatically</div></section>
+<section class="sides">
+<div class="side a"><div class="ic">⌁</div><h2>Agentic job monitoring</h2><div class="d">Save the applicant profile once, then search in the right order every time.</div><div class="feat"><div class="f"><span class="k">1</span><div><b>City-first search</b> <span>— Greater Boston and named metros before broad regional queries.</span></div></div><div class="f"><span class="k">2</span><div><b>Official verification</b> <span>— employer and ATS pages, not aggregator availability claims.</span></div></div><div class="f"><span class="k">3</span><div><b>Human review queue</b> <span>— approve, reject, open Apply, or mark applied.</span></div></div><div class="f"><span class="k">4</span><div><b>Scheduled monitoring</b> <span>— paid members can save schedules and receive nightly email digests.</span></div></div></div><a class="go" href="/job-agent.html">Create an agent →</a></div>
+<div class="side c"><div class="ic">👤</div><h2>Job-seeker toolkit</h2><div class="d">Paste a job description and your resume once—then run any of these.</div><div class="feat"><div class="f"><span class="k">1</span><div><b>Fit analysis</b> <span>— a 0–100 score with the exact keywords you're missing.</span></div></div><div class="f"><span class="k">2</span><div><b>ATS resume</b> <span>— a clean, keyword-aligned rewrite and PDF.</span></div></div><div class="f"><span class="k">3</span><div><b>Prep plan</b> <span>— focus areas, skill gaps, and study checklist.</span></div></div><div class="f"><span class="k">4</span><div><b>Mock interview</b> <span>— tailored questions and per-answer feedback.</span></div></div></div><a class="go" href="/candidate.html">Start landing the role →</a></div>
+<div class="side h"><div class="ic">🏢</div><h2>Recruiter toolkit</h2><div class="d">Paste the role and a stack of resumes—get a shortlist with reasons.</div><div class="feat"><div class="f"><span class="k">1</span><div><b>Ranked shortlist</b> <span>— best-fit first, each with a score and why.</span></div></div><div class="f"><span class="k">2</span><div><b>Call / maybe / pass</b> <span>— recommendations with strengths and concerns.</span></div></div><div class="f"><span class="k">3</span><div><b>Screening questions</b> <span>— tailored to each candidate.</span></div></div><div class="f"><span class="k">4</span><div><b>Talking points</b> <span>— an opener and what to probe.</span></div></div></div><a class="go" href="/hr.html">Start screening smarter →</a></div>
+</section>
+<section class="how"><h3>How the search agent works</h3><div class="steps"><div class="step"><div class="n">01</div><h4>Save preferences</h4><p>Profile, title families, compensation, industries, priority cities, states, regions, and remote eligibility persist in PostgreSQL.</p></div><div class="step"><div class="n">02</div><h4>Discover and verify</h4><p>The AI designs focused searches. SmartJobs follows results to official employer or ATS pages and checks that the posting remains active.</p></div><div class="step"><div class="n">03</div><h4>Review and act</h4><p>Inspect every result, open the official application in a new tab, reject weak matches, and mark applications complete.</p></div></div></section>
+<section class="price"><h3>Try it free. Schedule it when it earns it.</h3><p>Five manual agent runs every day. Paid membership adds automatic monitoring, email digests, and unlimited use across SmartJobs.</p><div class="amt">$4.99<small> / month</small></div><div class="row"><span>✓ Scheduled job agents</span><span>✓ Nightly match summaries</span><span>✓ Every candidate & recruiter tool</span><span>✓ Cancel anytime</span></div><a href="/job-agent.html">Build an agent →</a></section>
+<footer>RoleFit and SmartJobs are decision-support tools, not decision-makers. Search results and fit assessments require human review. SmartJobs never submits an application automatically, never fabricates applicant qualifications, and treats official employer or ATS pages as the source of truth for availability.</footer>
+</div></body></html>

@@ -1,12 +1,13 @@
 {
   "name": "rolefit",
   "version": "1.2.0",
-  "description": "AI job-fit toolkit with provider switch, recruiter workspace, Google authentication and Stripe billing.",
+  "description": "AI job-fit toolkit with provider switch, recruiter workspace, Google authentication, Stripe billing and agentic job monitoring.",
   "type": "module",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "db:init": "node scripts/init-recruiter-db.js"
+    "db:init": "node scripts/init-recruiter-db.js",
+    "db:init-agent": "node scripts/init-job-agent-db.js"
   },
   "engines": {
     "node": ">=18"

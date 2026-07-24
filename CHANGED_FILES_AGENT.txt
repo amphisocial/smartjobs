@@ -1,0 +1,25 @@
+Based on amphisocial/smartjobs main commit 16a85877fbf3356cdbf4f4aa93599a46a9ff9b06
+
+MODIFIED
+.env.example
+config.js
+package.json
+server.js
+public/index.html
+
+NEW
+db/job_agent_schema.sql
+scripts/init-job-agent-db.js
+lib/billing.js
+lib/job-agent-prompts.js
+lib/job-search-engine.js
+lib/job-agent-store.js
+lib/smtp-mailer.js
+lib/job-agent-service.js
+lib/job-agent-routes.js
+public/job-agent.html
+public/job-agent.css
+public/job-agent.js
+SMARTJOBS_AGENT_SETUP.md
+CHANGED_FILES_AGENT.txt
+BUILD_MANIFEST.txt
