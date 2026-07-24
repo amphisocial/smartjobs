@@ -16,7 +16,7 @@ The ZIP contains only new or changed files. Extract it over the root of your loc
   3. ordered priority cities
   4. states and regions
   5. U.S.-remote roles
-- Public-web discovery with optional Serper or Brave Search support and a no-key Bing RSS fallback.
+- Public-web discovery with provider failover: Serper or Brave when configured, followed by Bing RSS, Bing HTML, and DuckDuckGo HTML fallbacks.
 - Employer/ATS-page verification before a result is retained.
 - Persisted posting-date and source policy per agent:
   - configurable maximum posting age
@@ -109,13 +109,14 @@ JOB_AGENT_FREE_RUNS_DAILY=5
 JOB_AGENT_SCHEDULER_ENABLED=true
 JOB_AGENT_SCHEDULER_INTERVAL_MINUTES=15
 JOB_AGENT_SCHEDULER_BATCH_SIZE=4
-JOB_AGENT_MAX_QUERIES=36
+JOB_AGENT_MAX_QUERIES=24
 JOB_AGENT_MAX_DISCOVERED=100
+JOB_AGENT_QUERY_CONCURRENCY=3
 JOB_AGENT_VERIFY_CONCURRENCY=5
-JOB_AGENT_SEARCH_TIMEOUT_MS=15000
+JOB_AGENT_SEARCH_TIMEOUT_MS=10000
 
 # Search discovery
-# auto prefers Serper, then Brave, then the no-key Bing RSS fallback.
+# auto prefers Serper, then Brave, then Bing RSS/HTML and DuckDuckGo HTML fallbacks.
 JOB_AGENT_SEARCH_PROVIDER=auto
 SERPER_API_KEY=
 BRAVE_SEARCH_API_KEY=
@@ -134,8 +135,36 @@ SMTP_FROM_ADDRESS=jobs@yourdomain.com
 SMTP_HELO_NAME=smartjobs.yourdomain.com
 ```
 
-Bing RSS enables a working no-key setup. For heavier production use, Serper or Brave is recommended because public search HTML/RSS availability can change independently of SmartJobs.
+The no-key providers are best-effort and may be blocked or changed by the search engines. For production, configure Serper or Brave. The UI now has **Test search connection** and refuses to consume a run when every provider is unavailable or returns zero results.
 
+
+## Search connection diagnostics
+
+Before running an agent, click **Test search connection**. It runs a broad Boston technology query and reports which provider returned results. The server caches the check for five minutes and performs the same preflight before consuming a free run. You can run the same diagnostic from EC2 with:
+
+```bash
+npm run search:test
+```
+
+If the check fails, inspect the displayed provider attempts and PM2 logs. Typical causes are:
+
+- no `SERPER_API_KEY` or `BRAVE_SEARCH_API_KEY`, combined with public search providers blocking server traffic
+- outbound DNS or HTTPS blocked from the EC2 instance
+- a corporate proxy returning HTML instead of RSS/JSON
+- an invalid explicit `JOB_AGENT_SEARCH_PROVIDER` setting
+
+Recommended production configuration:
+
+```dotenv
+JOB_AGENT_SEARCH_PROVIDER=auto
+SERPER_API_KEY=your_serper_key
+# or BRAVE_SEARCH_API_KEY=your_brave_key
+JOB_AGENT_MAX_QUERIES=24
+JOB_AGENT_QUERY_CONCURRENCY=3
+JOB_AGENT_SEARCH_TIMEOUT_MS=10000
+```
+
+A run now records discovered, verified, skipped, and recommended counts, along with provider attempts and rejection summaries. A true discovery failure is marked **failed** rather than being shown as a successful zero-result run.
 
 ## Posting-date and source-policy behavior
 
@@ -200,7 +229,7 @@ From the local checkout:
 ```bash
 git add .env.example config.js package.json server.js public/index.html \
   public/job-agent.html public/job-agent.css public/job-agent.js \
-  db/job_agent_schema.sql scripts/init-job-agent-db.js \
+  db/job_agent_schema.sql scripts/init-job-agent-db.js scripts/test-job-search.js \
   lib/billing.js lib/job-agent-prompts.js lib/job-search-engine.js lib/job-agent-store.js \
   lib/smtp-mailer.js lib/job-agent-service.js lib/job-agent-routes.js \
   SMARTJOBS_AGENT_SETUP.md CHANGED_FILES_AGENT.txt

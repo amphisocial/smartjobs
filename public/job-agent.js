@@ -1,5 +1,5 @@
 (() => {
-  const state = { agents: [], results: [], runs: [], selectedId: "", paid: false, usage: null, smtpConfigured: false, pollTimer: null };
+  const state = { agents: [], results: [], runs: [], selectedId: "", paid: false, usage: null, smtpConfigured: false, searchHealth: null, pollTimer: null };
   const $ = id => document.getElementById(id);
   const esc = value => String(value ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
   const arr = value => Array.isArray(value) ? value : [];
@@ -260,7 +260,13 @@
       return `<div class="monitor-card"><div><strong>${esc(agent.name)}</strong><br><span>${agent.schedule_enabled ? `${esc(agent.schedule_frequency)} at ${esc(agent.schedule_time)} · ${esc(agent.timezone)}` : "Manual only"}</span></div><div><strong>Next run</strong><br><span>${fmtDate(agent.next_run_at)}</span></div><div><strong>Last run</strong><br><span>${fmtDate(agent.last_run_at)}</span></div><div><strong>Results</strong><br><span>${Number(agent.result_count || 0)} total · ${Number(agent.new_count || 0)} new</span></div><div><strong>Email</strong><br><span>${agent.email_enabled ? (state.smtpConfigured ? `Digest at ${agent.digest_hour}:00` : "Needs SMTP") : "Off"}</span></div></div>`;
     }).join("") : '<div class="empty">Save an agent to see monitoring status.</div>';
 
-    $("runList").innerHTML = state.runs.length ? state.runs.map(run => `<div class="run-row"><div><strong>${esc(run.agent_name)}</strong><br><span>${fmtDate(run.started_at)}</span></div><span class="run-status ${run.status}">${esc(run.status)}</span><span>${esc(run.trigger_type)}</span><span>${Number(run.verified_count || 0)} verified · ${Number(run.recommended_count || 0)} recommended</span></div>`).join("") : '<div class="empty">No agent runs yet.</div>';
+    $("runList").innerHTML = state.runs.length ? state.runs.map(run => {
+      const errors = arr(run.error_messages);
+      const providers = run.provider_diagnostics?.providerCounts || {};
+      const providerText = Object.entries(providers).map(([name, count]) => `${name} × ${count}`).join(", ") || "no provider returned results";
+      const rejectionText = Object.entries(run.rejection_reasons || {}).filter(([, count]) => Number(count) > 0).map(([name, count]) => `${name.replace(/_/g, " ")}: ${count}`).join(" · ");
+      return `<div class="run-row"><div><strong>${esc(run.agent_name)}</strong><br><span>${fmtDate(run.started_at)}</span>${errors.length ? `<br><span class="run-error">${esc(errors[0])}</span>` : ""}</div><span class="run-status ${run.status}">${esc(run.status)}</span><span>${esc(run.trigger_type)}</span><span>${Number(run.discovered_count || 0)} discovered · ${Number(run.verified_count || 0)} verified · ${Number(run.skipped_count || 0)} skipped · ${Number(run.recommended_count || 0)} recommended<br><small>${esc(providerText)}${rejectionText ? ` · ${esc(rejectionText)}` : ""}</small></span></div>`;
+    }).join("") : '<div class="empty">No agent runs yet.</div>';
     managePolling();
   }
 
@@ -271,6 +277,14 @@
     if (typeof data.paid === "boolean") state.paid = data.paid;
     if (data.usage) state.usage = data.usage;
     if (typeof data.smtpConfigured === "boolean") state.smtpConfigured = data.smtpConfigured;
+    if (data.searchHealth) {
+      state.searchHealth = data.searchHealth;
+      const detail = data.searchHealth.ok
+        ? `Search connection ready: ${data.searchHealth.provider} returned ${data.searchHealth.count} results.`
+        : `Search connection failed: ${(data.searchHealth.attempts || []).map(a => `${a.provider}: ${a.ok ? `${a.count} results` : a.error}`).join("; ")}`;
+      $("searchHealthStatus").textContent = detail;
+      $("searchHealthStatus").className = `hint ${data.searchHealth.ok ? "ok" : "error"}`;
+    }
     renderAgents(); renderQuota(); renderResults(); renderMonitoring();
   }
 
@@ -321,6 +335,29 @@
       setMessage(`Generated ${data.plan.queries?.length || 0} focused searches in city-first order.`, "ok");
     } catch (error) { setMessage(error.message, "error"); }
     finally { button.disabled = false; button.textContent = original; }
+  }
+
+  async function testSearchConnection(force = true) {
+    const button = $("testSearch");
+    const original = button.textContent;
+    button.disabled = true;
+    button.textContent = "Testing…";
+    $("searchHealthStatus").textContent = "Testing search providers with a Boston technology query…";
+    try {
+      const data = await api("/api/job-agent/search/health", { force });
+      updateState(data);
+      if (!data.searchHealth?.ok) throw new Error("No search provider returned results.");
+      setMessage("Search connection is working.", "ok");
+      return data.searchHealth;
+    } catch (error) {
+      $("searchHealthStatus").textContent = error.message;
+      $("searchHealthStatus").className = "hint error";
+      setMessage(error.message, "error");
+      throw error;
+    } finally {
+      button.disabled = false;
+      button.textContent = original;
+    }
   }
 
   async function runCurrent() {
@@ -394,6 +431,7 @@
   });
 
   $("newAgent").onclick = () => { selectAgent(null); setTab("configure"); setMessage(""); };
+  $("testSearch").onclick = () => testSearchConnection(true).catch(() => {});
   $("saveAgent").onclick = () => saveCurrent().catch(() => {});
   $("generatePlan").onclick = generatePlan;
   $("runAgent").onclick = runCurrent;

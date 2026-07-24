@@ -7,7 +7,8 @@
   "scripts": {
     "start": "node server.js",
     "db:init": "node scripts/init-recruiter-db.js",
-    "db:init-agent": "node scripts/init-job-agent-db.js"
+    "db:init-agent": "node scripts/init-job-agent-db.js",
+    "search:test": "node scripts/test-job-search.js"
   },
   "engines": {
     "node": ">=18"

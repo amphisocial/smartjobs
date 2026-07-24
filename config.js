@@ -33,10 +33,11 @@ export const config = {
 
   // Candidate job-search agent limits and workflow controls.
   jobAgentFreeRunsDaily: positiveInt("JOB_AGENT_FREE_RUNS_DAILY", 5),
-  jobAgentMaxQueries: positiveInt("JOB_AGENT_MAX_QUERIES", 36),
+  jobAgentMaxQueries: positiveInt("JOB_AGENT_MAX_QUERIES", 24),
   jobAgentMaxDiscovered: positiveInt("JOB_AGENT_MAX_DISCOVERED", 100),
   jobAgentVerifyConcurrency: positiveInt("JOB_AGENT_VERIFY_CONCURRENCY", 5),
-  jobAgentSearchTimeoutMs: positiveInt("JOB_AGENT_SEARCH_TIMEOUT_MS", 15000),
+  jobAgentQueryConcurrency: positiveInt("JOB_AGENT_QUERY_CONCURRENCY", 3),
+  jobAgentSearchTimeoutMs: positiveInt("JOB_AGENT_SEARCH_TIMEOUT_MS", 10000),
   jobAgentSchedulerEnabled: booleanVar("JOB_AGENT_SCHEDULER_ENABLED", true),
   jobAgentSchedulerIntervalMinutes: positiveInt("JOB_AGENT_SCHEDULER_INTERVAL_MINUTES", 15),
   jobAgentSchedulerBatchSize: positiveInt("JOB_AGENT_SCHEDULER_BATCH_SIZE", 4),

@@ -72,6 +72,10 @@ CREATE TABLE IF NOT EXISTS job_agent_runs (
   discovered_count INTEGER NOT NULL DEFAULT 0,
   verified_count INTEGER NOT NULL DEFAULT 0,
   recommended_count INTEGER NOT NULL DEFAULT 0,
+  skipped_count INTEGER NOT NULL DEFAULT 0,
+  empty_query_count INTEGER NOT NULL DEFAULT 0,
+  provider_diagnostics JSONB NOT NULL DEFAULT '{}'::jsonb,
+  rejection_reasons JSONB NOT NULL DEFAULT '{}'::jsonb,
   error_messages JSONB NOT NULL DEFAULT '[]'::jsonb,
   started_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   completed_at TIMESTAMPTZ
@@ -122,6 +126,12 @@ CREATE TABLE IF NOT EXISTS job_agent_results (
   raw_data JSONB NOT NULL DEFAULT '{}'::jsonb,
   UNIQUE (owner_key, agent_id, canonical_key)
 );
+
+ALTER TABLE job_agent_runs ADD COLUMN IF NOT EXISTS skipped_count INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE job_agent_runs ADD COLUMN IF NOT EXISTS empty_query_count INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE job_agent_runs ADD COLUMN IF NOT EXISTS provider_diagnostics JSONB NOT NULL DEFAULT '{}'::jsonb;
+ALTER TABLE job_agent_runs ADD COLUMN IF NOT EXISTS rejection_reasons JSONB NOT NULL DEFAULT '{}'::jsonb;
+
 ALTER TABLE job_search_agents ADD COLUMN IF NOT EXISTS max_posting_age_days INTEGER NOT NULL DEFAULT 30;
 ALTER TABLE job_search_agents ADD COLUMN IF NOT EXISTS posting_date_policy TEXT NOT NULL DEFAULT 'allow_missing';
 ALTER TABLE job_search_agents ADD COLUMN IF NOT EXISTS repost_policy TEXT NOT NULL DEFAULT 'use_original';

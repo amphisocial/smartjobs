@@ -10,6 +10,7 @@ public/index.html
 NEW
 db/job_agent_schema.sql
 scripts/init-job-agent-db.js
+scripts/test-job-search.js
 lib/billing.js
 lib/job-agent-prompts.js
 lib/job-search-engine.js
