@@ -1,28 +1,58 @@
 // config.js
 // Loads /opt/apps/smartjobs/.env automatically. PM2 environment values take precedence.
 import dotenv from "dotenv";
-dotenv.config({ override: false });
+const dotenvResult = dotenv.config({ override: false });
+const fileEnv = dotenvResult.parsed || {};
 
-const STRIPE_MODE = (process.env.STRIPE_MODE || "test").toLowerCase().trim();
+// PM2 can retain an explicitly empty variable and thereby prevent dotenv from
+// populating the value in process.env. Read the parsed .env file as a fallback
+// for empty PM2 values, and accept common historical aliases.
+function envValue(names, fallback = "") {
+  const list = Array.isArray(names) ? names : [names];
+  for (const name of list) {
+    const value = process.env[name];
+    if (value != null && String(value).trim() !== "") return String(value).trim();
+  }
+  for (const name of list) {
+    const value = fileEnv[name];
+    if (value != null && String(value).trim() !== "") return String(value).trim();
+  }
+  return fallback;
+}
+
+function envSource(names) {
+  const list = Array.isArray(names) ? names : [names];
+  for (const name of list) {
+    const value = process.env[name];
+    if (value != null && String(value).trim() !== "") return `process:${name}`;
+  }
+  for (const name of list) {
+    const value = fileEnv[name];
+    if (value != null && String(value).trim() !== "") return `.env:${name}`;
+  }
+  return "missing";
+}
+
+const STRIPE_MODE = envValue("STRIPE_MODE", "test").toLowerCase();
 
 function stripeVar(name) {
   const prefix = STRIPE_MODE === "live" ? "STRIPE_LIVE_" : "STRIPE_TEST_";
-  return (process.env[prefix + name] || process.env["STRIPE_" + name] || "").trim();
+  return envValue([prefix + name, "STRIPE_" + name]);
 }
 
 function positiveInt(name, fallback) {
-  const value = Number.parseInt(process.env[name] || String(fallback), 10);
+  const value = Number.parseInt(envValue(name, String(fallback)), 10);
   return Number.isFinite(value) && value > 0 ? value : fallback;
 }
 
 function booleanVar(name, fallback = false) {
-  const raw = process.env[name];
-  if (raw == null || raw === "") return fallback;
+  const raw = envValue(name);
+  if (raw === "") return fallback;
   return ["1", "true", "yes", "on"].includes(String(raw).toLowerCase().trim());
 }
 
 export const config = {
-  provider: (process.env.AI_PROVIDER || "openai").toLowerCase().trim(),
+  provider: envValue("AI_PROVIDER", "openai").toLowerCase(),
   freeDailyLimit: positiveInt("FREE_DAILY_LIMIT", 3),
   liveDailyLimit: positiveInt("LIVE_DAILY_LIMIT", 2),
 
@@ -41,26 +71,29 @@ export const config = {
   jobAgentSchedulerEnabled: booleanVar("JOB_AGENT_SCHEDULER_ENABLED", true),
   jobAgentSchedulerIntervalMinutes: positiveInt("JOB_AGENT_SCHEDULER_INTERVAL_MINUTES", 15),
   jobAgentSchedulerBatchSize: positiveInt("JOB_AGENT_SCHEDULER_BATCH_SIZE", 4),
-  jobAgentSearchProvider: (process.env.JOB_AGENT_SEARCH_PROVIDER || "auto").toLowerCase().trim(),
-  jobAgentSearchRssUrl: (process.env.JOB_AGENT_SEARCH_RSS_URL || "https://www.bing.com/search").trim(),
-  serperApiKey: (process.env.SERPER_API_KEY || "").trim(),
-  braveSearchApiKey: (process.env.BRAVE_SEARCH_API_KEY || "").trim(),
-  appBaseUrl: (process.env.APP_BASE_URL || "").trim(),
+  jobAgentSearchProvider: envValue("JOB_AGENT_SEARCH_PROVIDER", "auto").toLowerCase(),
+  jobAgentSearchAllowFallback: booleanVar("JOB_AGENT_SEARCH_ALLOW_FALLBACK", true),
+  jobAgentSearchRssUrl: envValue("JOB_AGENT_SEARCH_RSS_URL", "https://www.bing.com/search"),
+  serperApiKey: envValue(["SERPER_API_KEY", "SERPER_KEY", "SERPER_APIKEY", "SERPERDEV_API_KEY", "JOB_AGENT_SERPER_API_KEY"]),
+  serperKeySource: envSource(["SERPER_API_KEY", "SERPER_KEY", "SERPER_APIKEY", "SERPERDEV_API_KEY", "JOB_AGENT_SERPER_API_KEY"]),
+  braveSearchApiKey: envValue(["BRAVE_SEARCH_API_KEY", "BRAVE_API_KEY", "JOB_AGENT_BRAVE_API_KEY"]),
+  braveKeySource: envSource(["BRAVE_SEARCH_API_KEY", "BRAVE_API_KEY", "JOB_AGENT_BRAVE_API_KEY"]),
+  appBaseUrl: envValue("APP_BASE_URL"),
 
   // Google Identity Services. No Google client secret is required for ID-token sign-in.
-  googleClientId: (process.env.GOOGLE_CLIENT_ID || "").trim(),
-  authSessionSecret: (process.env.AUTH_SESSION_SECRET || "").trim(),
+  googleClientId: envValue("GOOGLE_CLIENT_ID"),
+  authSessionSecret: envValue("AUTH_SESSION_SECRET"),
   recruiterSessionDays: positiveInt("RECRUITER_AUTH_SESSION_DAYS", 30),
 
   openai: {
-    apiKey: process.env.OPENAI_API_KEY || "",
-    model: process.env.OPENAI_MODEL || "gpt-4o",
-    baseUrl: process.env.OPENAI_BASE_URL || "https://api.openai.com/v1",
+    apiKey: envValue("OPENAI_API_KEY"),
+    model: envValue("OPENAI_MODEL", "gpt-4o"),
+    baseUrl: envValue("OPENAI_BASE_URL", "https://api.openai.com/v1"),
   },
   gemini: {
-    apiKey: process.env.GEMINI_API_KEY || "",
-    model: process.env.GEMINI_MODEL || "gemini-2.5-flash",
-    baseUrl: process.env.GEMINI_BASE_URL || "https://generativelanguage.googleapis.com/v1beta",
+    apiKey: envValue("GEMINI_API_KEY"),
+    model: envValue("GEMINI_MODEL", "gemini-2.5-flash"),
+    baseUrl: envValue("GEMINI_BASE_URL", "https://generativelanguage.googleapis.com/v1beta"),
   },
 
   stripe: {
@@ -70,25 +103,25 @@ export const config = {
     webhookSecret: stripeVar("WEBHOOK_SECRET"),
   },
 
-  databaseUrl: (process.env.DATABASE_URL || "").trim(),
+  databaseUrl: envValue("DATABASE_URL"),
   // Optional dedicated SmartJobs database. Falls back to DATABASE_URL.
-  jobAgentDatabaseUrl: (process.env.SMARTJOBS_DATABASE_URL || "").trim(),
+  jobAgentDatabaseUrl: envValue("SMARTJOBS_DATABASE_URL"),
   pgSsl: (process.env.PGSSL || "false").toLowerCase() === "true",
 
   smtp: {
-    host: (process.env.SMTP_HOST || "").trim(),
+    host: envValue("SMTP_HOST"),
     port: positiveInt("SMTP_PORT", 587),
     secure: booleanVar("SMTP_SECURE", false),
     startTls: booleanVar("SMTP_STARTTLS", true),
     rejectUnauthorized: booleanVar("SMTP_REJECT_UNAUTHORIZED", true),
-    user: (process.env.SMTP_USER || "").trim(),
-    password: process.env.SMTP_PASSWORD || "",
-    from: (process.env.SMTP_FROM || "").trim(),
-    fromAddress: (process.env.SMTP_FROM_ADDRESS || "").trim(),
-    heloName: (process.env.SMTP_HELO_NAME || "smartjobs.local").trim(),
+    user: envValue("SMTP_USER"),
+    password: envValue("SMTP_PASSWORD"),
+    from: envValue("SMTP_FROM"),
+    fromAddress: envValue("SMTP_FROM_ADDRESS"),
+    heloName: envValue("SMTP_HELO_NAME", "smartjobs.local"),
   },
 
-  port: Number.parseInt(process.env.PORT || "3000", 10),
+  port: Number.parseInt(envValue("PORT", "3000"), 10),
 };
 
 export function assertConfig() {

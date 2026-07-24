@@ -262,10 +262,16 @@
 
     $("runList").innerHTML = state.runs.length ? state.runs.map(run => {
       const errors = arr(run.error_messages);
-      const providers = run.provider_diagnostics?.providerCounts || {};
+      const diagnostics = run.provider_diagnostics || {};
+      const providers = diagnostics.providerCounts || {};
       const providerText = Object.entries(providers).map(([name, count]) => `${name} × ${count}`).join(", ") || "no provider returned results";
+      const providerErrors = Object.entries(diagnostics.providerErrors || {}).filter(([, count]) => Number(count) > 0).map(([name, count]) => `${name} failed × ${count}`).join(" · ");
+      const configuration = diagnostics.providerConfiguration || {};
+      const configuredText = configuration.serperConfigured
+        ? `Serper detected via ${configuration.serperKeySource || "configured environment"}`
+        : "Serper not detected at process start";
       const rejectionText = Object.entries(run.rejection_reasons || {}).filter(([, count]) => Number(count) > 0).map(([name, count]) => `${name.replace(/_/g, " ")}: ${count}`).join(" · ");
-      return `<div class="run-row"><div><strong>${esc(run.agent_name)}</strong><br><span>${fmtDate(run.started_at)}</span>${errors.length ? `<br><span class="run-error">${esc(errors[0])}</span>` : ""}</div><span class="run-status ${run.status}">${esc(run.status)}</span><span>${esc(run.trigger_type)}</span><span>${Number(run.discovered_count || 0)} discovered · ${Number(run.verified_count || 0)} verified · ${Number(run.skipped_count || 0)} skipped · ${Number(run.recommended_count || 0)} recommended<br><small>${esc(providerText)}${rejectionText ? ` · ${esc(rejectionText)}` : ""}</small></span></div>`;
+      return `<div class="run-row"><div><strong>${esc(run.agent_name)}</strong><br><span>${fmtDate(run.started_at)}</span>${errors.length ? `<br><span class="run-error">${esc(errors[0])}</span>` : ""}</div><span class="run-status ${run.status}">${esc(run.status)}</span><span>${esc(run.trigger_type)}</span><span>${Number(run.discovered_count || 0)} discovered · ${Number(run.verified_count || 0)} verified · ${Number(run.skipped_count || 0)} skipped · ${Number(run.recommended_count || 0)} recommended<br><small>${esc(providerText)} · ${esc(configuredText)}${providerErrors ? ` · ${esc(providerErrors)}` : ""}${rejectionText ? ` · ${esc(rejectionText)}` : ""}</small></span></div>`;
     }).join("") : '<div class="empty">No agent runs yet.</div>';
     managePolling();
   }
@@ -279,9 +285,14 @@
     if (typeof data.smtpConfigured === "boolean") state.smtpConfigured = data.smtpConfigured;
     if (data.searchHealth) {
       state.searchHealth = data.searchHealth;
+      const configuration = data.searchHealth.configuration || {};
+      const detected = configuration.serperConfigured
+        ? `Serper detected via ${configuration.serperKeySource || "environment"}.`
+        : "Serper was not detected by the Node process.";
+      const attempts = (data.searchHealth.attempts || []).map(a => `${a.provider}: ${a.ok ? `${a.count} results` : a.error}`).join("; ");
       const detail = data.searchHealth.ok
-        ? `Search connection ready: ${data.searchHealth.provider} returned ${data.searchHealth.count} results.`
-        : `Search connection failed: ${(data.searchHealth.attempts || []).map(a => `${a.provider}: ${a.ok ? `${a.count} results` : a.error}`).join("; ")}`;
+        ? `${detected} Active provider: ${data.searchHealth.provider} returned ${data.searchHealth.count} results.${attempts ? ` Attempts: ${attempts}` : ""}`
+        : `${detected} Search connection failed: ${attempts}`;
       $("searchHealthStatus").textContent = detail;
       $("searchHealthStatus").className = `hint ${data.searchHealth.ok ? "ok" : "error"}`;
     }

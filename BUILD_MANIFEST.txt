@@ -1,4 +1,4 @@
-SmartJobs Agentic Search Patch — zero-result discovery fix
+SmartJobs Agentic Search Patch — Serper runtime + verification diagnostics fix
 Base repository: https://github.com/amphisocial/smartjobs
 Base branch: main
 Base commit: 16a85877fbf3356cdbf4f4aa93599a46a9ff9b06
@@ -7,48 +7,46 @@ Build date: 2026-07-24
 Contents: new and changed files only. Extract over the repository root.
 
 Fixes in this revision:
-- detects and reports search-provider failures instead of completing with a silent zero-result run
-- tests search connectivity before consuming a free run
-- search-provider failover: Serper, Brave, Bing RSS, Bing HTML, DuckDuckGo HTML
-- broad query first; compact official-source query second
-- parallel query execution with configurable concurrency
-- persisted discovered, verified, skipped, empty-query, provider, and rejection diagnostics
-- failed status when discovery truly returns zero candidates
-- CLI diagnostic: npm run search:test
+- reads Serper from SERPER_API_KEY and common aliases
+- reads non-empty .env values even when PM2 retains an explicitly blank variable
+- reports the non-secret source of the loaded Serper key
+- explicit strict-provider mode through JOB_AGENT_SEARCH_ALLOW_FALLBACK=false
+- startup log shows whether Serper was detected and from which variable source
+- search health reports every provider attempt, including Serper HTTP/auth/quota failures
+- run history records successful providers, attempted providers, and provider error counts
+- verification now reports individual rejection reasons instead of one generic skipped bucket
+- recognized ATS pages with readable content are accepted as open unless closed or expired
+- broader Apply-control detection for employer career pages
+- retains city-first search, source/date policy, quotas, scheduling, PostgreSQL persistence, SMTP digests, and prior dependency security fix
 
 Validation performed:
 - node --check on all changed/new JavaScript files
 - package.json JSON parse
 - HTML/JavaScript ID-reference validation
-- deterministic city-first coverage test
-- Bing RSS parser/fallback test
-- Bing HTML parser/fallback test
-- DuckDuckGo HTML parser/fallback test
-- persisted posting-date/source-policy coverage test
-- schedule calculation checks retained from the prior build
+- blank-PM2-variable versus .env Serper fallback test
 - secret/local-path scan
 - ZIP integrity test
 
-Live external search, Stripe, Google, PostgreSQL, and SMTP calls require the server .env and were not invoked from the isolated build environment.
+Live Serper, Stripe, Google, PostgreSQL, SMTP, and ATS-page calls require the server environment and were not invoked from the isolated build environment.
 
 SHA-256 checksums (excluding this manifest):
 180bbea57d96390d8302fa8a62f17a19ef07c6494add39c49ef142f5157a08d2  ./.env.example
 3c12b0698e54fc78e0839f8a0c69a116d525735ad33b5acb1d94754f5ff33e64  ./CHANGED_FILES_AGENT.txt
-50129404002ca6c8542a2a2af9d1368650e67d4ff335705d913f7a33034e0460  ./SMARTJOBS_AGENT_SETUP.md
-cb3b094793b51a7d975994f8f5da11922f16ad950e6bc82c3136a0dc8170a857  ./config.js
+77e2929772ecb19849dd74b384591217023e44aea41fdd16a0b7ab1e4aeb9d87  ./SMARTJOBS_AGENT_SETUP.md
+54a45e688fc86d5442338a0cee75d9c9e51f0b38330070027c8bd2ad0cb6bcfc  ./config.js
 673d332fd96205449e60c10f8aa987821231706aec4dd593367f2f99243d189c  ./db/job_agent_schema.sql
 f19fb2dbace6af0e99c0af9538d668e913381be8b44a3820e536aa2631dfaff4  ./lib/billing.js
 f1de982b768f8c78251ca53e6fa30ee21f80cdd34474b0199d3320d11f468a9f  ./lib/job-agent-prompts.js
-dd32d7901d2621786e63fc45a6c72f578374d83813071418ad6116dc56e3de33  ./lib/job-agent-routes.js
+be571a1f1f7b1cd17e1fee81603550e1b98970891b06db14dac6d8e0f0a0946b  ./lib/job-agent-routes.js
 f8c6afbd6385c4cc6ea425dbfb4db6e137ff01734f96652c3644000715ec204c  ./lib/job-agent-service.js
 c8a590c3760ab9c0b9475664a2eda1059cab89db15c96addafd509a63c314cd7  ./lib/job-agent-store.js
-0d234508c0079981c7369b336f93963fb5494f77676edaa762f973660ddc34a8  ./lib/job-search-engine.js
+3feb0755571d9ad63065729a2922ba70a63a0cd471230dde7bc11969f4283821  ./lib/job-search-engine.js
 7c2fc118eeffd2a49e257467c9c6644534ef2504b0a7fec83ad66a4179f6cdae  ./lib/smtp-mailer.js
-6b2c2b9835ed7f87659450b5e9ac829bbc90c61032e6b4ade6d0cc1eabb3df62  ./package.json
+be85e056c1bd36a72edf71306fa45806c38afdc1b9a2d5ee1cd2ae6e555e44a6  ./package.json
 d9e54306a03ba224a5942b94d06ae47837c2146315b4d01ece832f6a77f3dd55  ./public/index.html
 e1273acccd1e8bf22f34f34c877c5554cf64aafd59e90f3ae3daf54e95d51afe  ./public/job-agent.css
 1db8006b042e80177d626d2bc6b324ecb7b60937186a97866c7e44f740a26449  ./public/job-agent.html
-ba951017ec6927ce9394701d15e367cffe4e0fb871437bc4bfb5c0bf560a25f1  ./public/job-agent.js
+5995bab4333a08534663974678ceac04b6635cfec883b926436ee12839cb2aa4  ./public/job-agent.js
 a4a16cd04d75e9a6969698487fa6a8e7002cb7e5b87c7d7645f44e0aae9199fe  ./scripts/init-job-agent-db.js
-5866cb1c09c3120451681e88709ef84c070ad91499b9abc09701c05aa1ad208a  ./scripts/test-job-search.js
+1faa09063570e8bdcf97eeef3f89166ca5a1516f2e7256f75d2d1e4b90655466  ./scripts/test-job-search.js
 23bf8d3871c3cd5495005b332663d1ee8f07f70937519e0426068b1e4b5845d3  ./server.js

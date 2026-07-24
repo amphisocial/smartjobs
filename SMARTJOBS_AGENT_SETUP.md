@@ -286,3 +286,27 @@ Then verify:
 - The scheduler uses a PostgreSQL advisory lock, so multiple PM2 workers do not run the same scheduling batch concurrently.
 - Interrupted runs older than two hours are marked failed during startup.
 - Search and verification errors are stored in `job_agent_runs.error_messages` and shown through run status; detailed errors also appear in PM2 logs.
+
+
+## Serper is configured but runs show Bing
+
+The runtime now accepts `SERPER_API_KEY` plus the common aliases `SERPER_KEY`, `SERPER_APIKEY`, `SERPERDEV_API_KEY`, and `JOB_AGENT_SERPER_API_KEY`. It also handles a blank PM2 environment variable that would otherwise shadow a non-empty value in `.env`.
+
+Use strict Serper mode while diagnosing so a 401, 403, or 429 is shown instead of silently falling back:
+
+```dotenv
+JOB_AGENT_SEARCH_PROVIDER=serper
+JOB_AGENT_SEARCH_ALLOW_FALLBACK=false
+SERPER_API_KEY=your_key
+```
+
+Restart and inspect the non-secret runtime status:
+
+```bash
+pm2 restart smartjobs --update-env
+pm2 logs smartjobs --lines 80
+node --input-type=module -e "import('./config.js').then(({config}) => console.log({provider:config.jobAgentSearchProvider,serperConfigured:Boolean(config.serperApiKey),serperKeySource:config.serperKeySource,keyLength:config.serperApiKey.length,allowFallback:config.jobAgentSearchAllowFallback}))"
+npm run search:test
+```
+
+Do not print the key itself. A healthy test reports `serperConfigured: true`, a key source such as `.env:SERPER_API_KEY`, and `provider: "serper"`. A `serper_http_401` or `serper_http_403` means the key is invalid; `serper_http_429` means the Serper account is out of credits or rate limited.
