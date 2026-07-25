@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/job-agent.css" />
+  <link rel="stylesheet" href="/job-agent.css?v=4.0.0" />
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <link rel="stylesheet" href="/smartjobs-header.css?v=3.0.0">
 </head>
@@ -88,17 +88,18 @@
           <div class="form-content">
             <h3>Applicant profile</h3>
             <p>Paste a resume or a detailed career summary. This becomes the source of truth for fit scoring.</p>
-            <label>Agent name<input id="agentName" value="Executive technology search" maxlength="160" /></label>
-            <label>Resume / profile summary<textarea id="profileSummary" rows="12" placeholder="Paste the applicant's resume, leadership scope, accomplishments, industries, systems, and constraints."></textarea></label>
+            <label>Agent name<input id="agentName" placeholder="e.g. &lt;My cloud infrastructure search&gt;" maxlength="160" /></label>
+            <label>Resume / profile summary<textarea id="profileSummary" rows="12" placeholder="Paste your resume, or describe your experience, accomplishments, skills, preferred roles, and important constraints. Example: &lt;Senior systems engineer with 8 years of AWS, Linux, Kubernetes, and automation experience...&gt;"></textarea></label>
             <div class="inline-upload">
               <input id="profileFile" type="file" accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" />
               <button id="readProfileFile" class="small-button">Read PDF / Word</button>
               <span id="fileStatus"></span>
             </div>
             <div class="grid two">
-              <label>Preferred industries<textarea id="industries" rows="4" placeholder="Life sciences&#10;Advanced manufacturing&#10;Aerospace & defense"></textarea></label>
-              <label>Role and domain keywords<textarea id="roleKeywords" rows="4" placeholder="ERP&#10;Digital manufacturing&#10;AI transformation&#10;Enterprise applications"></textarea></label>
+              <label>Preferred industries<textarea id="industries" rows="5" placeholder="e.g. &lt;Healthcare&gt;&#10;&lt;Software / SaaS&gt;&#10;Add one industry per line"></textarea></label>
+              <label>Role and domain keywords<textarea id="roleKeywords" rows="5" placeholder="e.g. &lt;AWS&gt;&#10;&lt;Cybersecurity&gt;&#10;&lt;ERP&gt;&#10;Add one skill or domain per line"></textarea></label>
             </div>
+            <div class="example-actions"><button id="addCommonIndustries" class="example-button" type="button">Add common IT industries</button><span>Optional examples are appended and remain fully editable.</span></div>
           </div>
         </section>
 
@@ -106,12 +107,25 @@
           <div class="step-number">2</div>
           <div class="form-content">
             <h3>Title preferences</h3>
-            <p>Use one title per line. The AI expands these into close variants rather than relying on one broad keyword search.</p>
+            <p>Start with one or more titles you would realistically apply for. Use one title per line. Optional examples below append to your entries; they are never saved unless you choose them.</p>
+            <div class="starter-box">
+              <strong>Add editable IT examples</strong>
+              <div class="starter-buttons">
+                <button type="button" data-starter-template="leadership">IT leadership</button>
+                <button type="button" data-starter-template="engineering">Software engineering</button>
+                <button type="button" data-starter-template="data_ai">Data &amp; AI</button>
+                <button type="button" data-starter-template="cybersecurity">Cybersecurity</button>
+                <button type="button" data-starter-template="cloud_infrastructure">Cloud &amp; infrastructure</button>
+                <button type="button" data-starter-template="enterprise_apps">ERP &amp; enterprise apps</button>
+                <button type="button" data-starter-template="product_digital">Product &amp; digital</button>
+                <button type="button" data-starter-template="it_operations">IT operations &amp; PMO</button>
+              </div>
+            </div>
             <div class="grid two">
-              <label>Target titles<textarea id="targetTitles" rows="9" placeholder="Chief Information Officer&#10;Divisional CIO&#10;VP Information Technology&#10;Head of IT&#10;Senior Director Business Applications"></textarea></label>
+              <label>Target titles<textarea id="targetTitles" rows="9" placeholder="e.g. &lt;Senior Cloud Engineer&gt;&#10;&lt;Infrastructure Manager&gt;&#10;Add one title per line"></textarea></label>
               <div>
-                <label>Preferred title terms<textarea id="preferredTitles" rows="4" placeholder="enterprise platforms&#10;business technology&#10;commercial technology"></textarea></label>
-                <label>Exclude title / domain terms<textarea id="excludedTitles" rows="4" placeholder="clinical physician&#10;banking-only&#10;insurance-only"></textarea></label>
+                <label>Preferred title terms<textarea id="preferredTitles" rows="4" placeholder="e.g. &lt;cloud platform&gt;&#10;&lt;infrastructure automation&gt;"></textarea></label>
+                <label>Exclude title / domain terms<textarea id="excludedTitles" rows="4" placeholder="e.g. &lt;intern&gt;&#10;&lt;field sales&gt;&#10;Only add terms you do not want"></textarea></label>
               </div>
             </div>
           </div>
@@ -123,9 +137,9 @@
             <h3>City-first geography</h3>
             <p>Priority cities run first in the order entered. Broader regions and remote searches run afterward.</p>
             <div class="grid three">
-              <label>Priority cities<textarea id="priorityCities" rows="9" placeholder="Boston, MA&#10;Cambridge, MA&#10;Somerville, MA&#10;New York, NY&#10;Washington, DC"></textarea></label>
-              <label>States<textarea id="states" rows="9" placeholder="Massachusetts&#10;New York&#10;Connecticut&#10;Maine&#10;New Hampshire"></textarea></label>
-              <label>Regions<textarea id="regions" rows="9" placeholder="New England&#10;Northeast&#10;Mid-Atlantic"></textarea></label>
+              <label>Priority cities<textarea id="priorityCities" rows="9" placeholder="e.g. &lt;Austin, TX&gt;&#10;&lt;Chicago, IL&gt;&#10;Add one city per line"></textarea></label>
+              <label>States<textarea id="states" rows="9" placeholder="e.g. &lt;Texas&gt;&#10;&lt;Illinois&gt;&#10;Add one state per line"></textarea></label>
+              <label>Regions<textarea id="regions" rows="9" placeholder="e.g. &lt;Midwest&gt;&#10;&lt;Pacific Northwest&gt;&#10;Add one region per line"></textarea></label>
             </div>
             <label class="check"><input id="remoteEligible" type="checkbox" checked /> Include U.S.-remote roles as the final search wave</label>
           </div>
@@ -136,11 +150,11 @@
           <div class="form-content">
             <h3>Compensation and result controls</h3>
             <div class="grid three">
-              <label>Minimum base compensation<input id="minBase" type="number" min="0" step="5000" value="225000" /></label>
-              <label>Minimum total compensation<input id="minTotal" type="number" min="0" step="5000" value="250000" /></label>
+              <label>Minimum base compensation<input id="minBase" type="number" min="0" step="5000" placeholder="e.g. 120000" /></label>
+              <label>Minimum total compensation<input id="minTotal" type="number" min="0" step="5000" placeholder="e.g. 145000" /></label>
               <label>Maximum results per run<input id="maxResults" type="number" min="5" max="75" value="25" /></label>
             </div>
-            <label>Exclude keywords<textarea id="excludedKeywords" rows="3" placeholder="mandatory Epic certification&#10;physician license&#10;retail branch banking"></textarea></label>
+            <label>Exclude keywords<textarea id="excludedKeywords" rows="3" placeholder="e.g. &lt;mandatory clearance&gt;&#10;&lt;frequent travel&gt;&#10;&lt;contract only&gt;"></textarea></label>
           </div>
         </section>
 
@@ -246,6 +260,6 @@ employer</textarea></label>
 
   <script src="/app-billing.js?v=3.0.0"></script>
   <script src="/recruiter-auth.js?v=3.0.0"></script>
-  <script src="/job-agent.js"></script>
+  <script src="/job-agent.js?v=4.0.0"></script>
 </body>
 </html>

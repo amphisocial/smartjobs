@@ -11,3 +11,13 @@
 @media(max-width:900px){.workspace{grid-template-columns:1fr}.sidebar{position:static;height:auto;border-right:0;border-bottom:1px solid var(--line)}.agent-list{display:grid;grid-template-columns:repeat(2,1fr)}.topbar nav{display:none}.grid.three,.grid.four{grid-template-columns:1fr 1fr}.monitor-card{grid-template-columns:1fr 1fr}.main-column{padding:0 18px 40px}}
 @media(max-width:620px){.topbar{padding:0 14px}.credits,.account-zone #recruiterAccountName{display:none}.signin-card{margin:35px 14px;padding:28px}.signin-card h1{font-size:30px}.agent-list,.grid.two,.grid.three,.grid.four,.detail-grid{grid-template-columns:1fr}.form-card{grid-template-columns:1fr}.panel-heading,.section-inline,.result-top{flex-direction:column}.actions{width:100%}.actions button{flex:1}.monitor-card,.run-row{grid-template-columns:1fr}.tabs{overflow:auto}.main-column{padding:0 12px 35px}}
 .hint.ok{color:var(--green)}.hint.error{color:var(--red)}.run-error{color:var(--red)!important}.run-row small{color:var(--muted);line-height:1.45}
+
+
+/* Neutral new-agent setup and optional IT starter examples. */
+.starter-box{margin:4px 0 16px;padding:14px;border:1px solid #dbe3f0;border-radius:12px;background:#f8fafc}
+.starter-box strong{display:block;font-size:12px;color:#334155;margin-bottom:9px}
+.starter-buttons{display:flex;flex-wrap:wrap;gap:7px}
+.starter-buttons button,.example-button{width:auto;border:1px solid #c7d2fe;background:#fff;color:var(--ind);border-radius:999px;padding:7px 11px;font-size:11.5px;font-weight:750;cursor:pointer}
+.starter-buttons button:hover,.example-button:hover{background:#eef2ff;border-color:#818cf8}
+.example-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:10px;color:var(--muted);font-size:11.5px}
+@media(max-width:620px){.starter-buttons button{flex:1 1 145px}.example-actions{align-items:flex-start;flex-direction:column}}

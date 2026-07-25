@@ -8,6 +8,84 @@
   const money = value => value ? new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(Number(value)) : "";
   const fmtDate = value => value ? new Intl.DateTimeFormat("en-US", { dateStyle: "medium", timeStyle: "short" }).format(new Date(value)) : "—";
 
+
+  // New agents start neutral. These optional templates append editable examples
+  // only when the user explicitly chooses a career track.
+  const IT_STARTER_TEMPLATES = {
+    leadership: {
+      titles: ["Chief Information Officer", "Vice President Information Technology", "Head of IT", "Director of Information Technology", "IT Director", "Senior Manager Information Technology"],
+      preferred: ["technology leadership", "IT strategy", "digital transformation", "enterprise technology"],
+      keywords: ["IT strategy", "enterprise architecture", "technology operations", "portfolio management", "vendor management", "cybersecurity", "cloud", "ERP"],
+    },
+    engineering: {
+      titles: ["Software Engineer", "Senior Software Engineer", "Staff Software Engineer", "Principal Software Engineer", "Engineering Manager", "Director of Software Engineering"],
+      preferred: ["software engineering", "platform engineering", "application development"],
+      keywords: ["software development", "distributed systems", "APIs", "microservices", "DevOps", "CI/CD", "cloud architecture"],
+    },
+    data_ai: {
+      titles: ["Data Analyst", "Data Engineer", "Senior Data Engineer", "Data Scientist", "Machine Learning Engineer", "AI Engineer", "Analytics Manager", "Director of Data and Analytics", "Chief Data Officer", "Chief AI Officer"],
+      preferred: ["data and analytics", "artificial intelligence", "machine learning", "business intelligence"],
+      keywords: ["data engineering", "data science", "machine learning", "generative AI", "LLM", "RAG", "data platforms", "BI", "analytics"],
+    },
+    cybersecurity: {
+      titles: ["Cybersecurity Analyst", "Security Engineer", "Cloud Security Engineer", "Security Architect", "Security Manager", "Director of Information Security", "Chief Information Security Officer"],
+      preferred: ["information security", "cybersecurity", "security operations", "risk and compliance"],
+      keywords: ["SOC", "SIEM", "IAM", "zero trust", "incident response", "vulnerability management", "GRC", "NIST", "cloud security"],
+    },
+    cloud_infrastructure: {
+      titles: ["Systems Administrator", "Network Engineer", "Cloud Engineer", "Site Reliability Engineer", "Infrastructure Architect", "IT Infrastructure Manager", "Director of Infrastructure and Operations", "Vice President Infrastructure and Operations"],
+      preferred: ["cloud infrastructure", "infrastructure operations", "platform operations", "site reliability"],
+      keywords: ["AWS", "Azure", "Google Cloud", "Kubernetes", "Terraform", "networking", "observability", "SRE", "infrastructure as code"],
+    },
+    enterprise_apps: {
+      titles: ["Business Systems Analyst", "ERP Analyst", "Enterprise Applications Manager", "Director of Enterprise Applications", "Vice President Enterprise Applications", "SAP Program Manager", "Oracle ERP Manager", "CRM Product Owner"],
+      preferred: ["enterprise applications", "business systems", "ERP transformation", "digital operations"],
+      keywords: ["ERP", "SAP", "Oracle", "Microsoft Dynamics", "Salesforce", "CRM", "PLM", "MES", "HRIS", "systems integration"],
+    },
+    product_digital: {
+      titles: ["Product Manager", "Technical Product Manager", "Senior Product Manager", "Director of Product Management", "Vice President Product", "Director of Digital Transformation"],
+      preferred: ["product management", "digital products", "platform product", "digital transformation"],
+      keywords: ["product strategy", "roadmap", "customer discovery", "agile", "product analytics", "digital experience", "platforms"],
+    },
+    it_operations: {
+      titles: ["IT Support Specialist", "Service Desk Manager", "IT Operations Manager", "IT Service Management Manager", "Director of IT Operations", "Technology Program Manager", "PMO Director"],
+      preferred: ["IT operations", "service management", "technology programs", "IT delivery"],
+      keywords: ["ITIL", "ITSM", "service desk", "incident management", "change management", "program management", "PMO", "managed services"],
+    },
+  };
+
+  const COMMON_IT_INDUSTRIES = [
+    "Technology", "Software / SaaS", "Financial services", "Healthcare", "Life sciences",
+    "Manufacturing", "Retail / e-commerce", "Professional services", "Government / public sector",
+    "Education", "Energy / utilities", "Telecommunications", "Media / entertainment",
+    "Transportation / logistics", "Aerospace & defense",
+  ];
+
+  function appendUniqueLines(id, values) {
+    const field = $(id);
+    if (!field) return;
+    const existing = splitList(field.value);
+    const seen = new Set(existing.map(value => value.toLowerCase()));
+    for (const value of values || []) {
+      const clean = String(value || "").trim();
+      if (clean && !seen.has(clean.toLowerCase())) {
+        existing.push(clean);
+        seen.add(clean.toLowerCase());
+      }
+    }
+    field.value = existing.join("\n");
+    field.dispatchEvent(new Event("input", { bubbles: true }));
+  }
+
+  function addStarterTemplate(key) {
+    const template = IT_STARTER_TEMPLATES[key];
+    if (!template) return;
+    appendUniqueLines("targetTitles", template.titles);
+    appendUniqueLines("preferredTitles", template.preferred);
+    appendUniqueLines("roleKeywords", template.keywords);
+    setMessage("Editable examples added. Remove anything that does not fit your search.", "ok");
+  }
+
   async function api(url, body = {}) {
     if (!window.RecruiterAuth?.signedIn) throw new Error("Sign in with Google first.");
     return window.RF.post(url, { recruiterSession: window.RecruiterAuth.sessionToken, ...body });
@@ -59,15 +137,12 @@
 
   function emptyAgent() {
     return {
-      name: "Executive technology search",
+      name: "My IT job search",
       profile_summary: "",
-      target_titles: ["Chief Information Officer", "Divisional CIO", "Vice President Information Technology", "Head of IT", "Senior Director Business Applications"],
-      preferred_title_terms: ["enterprise platforms", "business technology", "digital transformation", "commercial technology"],
-      excluded_title_terms: [], industries: [], role_keywords: [], excluded_keywords: [],
-      priority_cities: ["Boston, MA", "Cambridge, MA", "Somerville, MA", "New York, NY", "Washington, DC", "Hartford, CT", "Portland, ME", "Bangor, ME", "Manchester, NH"],
-      states: ["Massachusetts", "New York", "Connecticut", "Maine", "New Hampshire"],
-      regions: ["New England", "Northeast", "Mid-Atlantic"], remote_eligible: true,
-      min_base_compensation: 225000, min_total_compensation: 250000, max_results: 25,
+      target_titles: [], preferred_title_terms: [], excluded_title_terms: [],
+      industries: [], role_keywords: [], excluded_keywords: [],
+      priority_cities: [], states: [], regions: [], remote_eligible: true,
+      min_base_compensation: null, min_total_compensation: null, max_results: 25,
       max_posting_age_days: 30, posting_date_policy: "allow_missing", repost_policy: "use_original",
       official_sources_only: true, verify_application_open: true, allow_aggregator_discovery: true,
       preferred_source_systems: ["workday", "adp", "greenhouse", "lever", "smartrecruiters", "successfactors", "oracle", "icims", "ukg", "dayforce", "jobvite", "ashby", "avature", "eightfold", "phenom", "employer"],
@@ -439,6 +514,18 @@
         await setResultStatus(result.id, "approved");
       } else await setResultStatus(result.id, value);
     }
+  });
+
+  document.querySelectorAll("[data-starter-template]").forEach(button => {
+    button.addEventListener("click", event => {
+      event.preventDefault();
+      addStarterTemplate(button.dataset.starterTemplate);
+    });
+  });
+  $("addCommonIndustries")?.addEventListener("click", event => {
+    event.preventDefault();
+    appendUniqueLines("industries", COMMON_IT_INDUSTRIES);
+    setMessage("Common industries added. Keep only the industries you want searched.", "ok");
   });
 
   $("newAgent").onclick = () => { selectAgent(null); setTab("configure"); setMessage(""); };
