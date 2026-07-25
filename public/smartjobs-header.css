@@ -1,0 +1,161 @@
+:root{
+  --sj-header-height:72px;
+  --sj-purple:#4f46e5;
+  --sj-purple-dark:#4338ca;
+  --sj-ink:#172033;
+  --sj-muted:#667085;
+  --sj-line:#e4e7ec;
+  --sj-soft:#f4f3ff;
+}
+
+/* Hide the four page-specific headers. The shared header is inserted first. */
+body > header.topbar:not(#smartjobsAppHeader),
+body > .wrap > header,
+body > .sj-shell{
+  display:none!important;
+}
+body.sj-shell-active{padding-top:0!important}
+
+.sj-app-header{
+  position:sticky;
+  top:0;
+  z-index:10000;
+  width:100%;
+  min-height:var(--sj-header-height);
+  background:#fff;
+  border-bottom:1px solid var(--sj-line);
+  font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+}
+.sj-app-header *{box-sizing:border-box}
+.sj-app-header [hidden]{display:none!important}
+.sj-app-header-inner{
+  min-height:var(--sj-header-height);
+  width:100%;
+  padding:0 28px;
+  display:flex;
+  align-items:center;
+  gap:30px;
+}
+.sj-app-brand{
+  flex:0 0 auto;
+  color:var(--sj-purple-dark);
+  text-decoration:none;
+  font-size:27px;
+  line-height:1;
+  font-weight:900;
+  letter-spacing:-.055em;
+}
+.sj-app-brand span{color:#6d28d9}
+.sj-app-nav{
+  display:flex;
+  align-self:stretch;
+  align-items:center;
+  gap:4px;
+  min-width:0;
+  overflow-x:auto;
+  scrollbar-width:none;
+}
+.sj-app-nav::-webkit-scrollbar{display:none}
+.sj-app-nav a{
+  position:relative;
+  display:flex;
+  align-items:center;
+  align-self:stretch;
+  flex:0 0 auto;
+  padding:0 14px;
+  color:#475467;
+  text-decoration:none;
+  font-size:15px;
+  font-weight:650;
+  white-space:nowrap;
+}
+.sj-app-nav a:hover{color:var(--sj-purple)}
+.sj-app-nav a.active{color:var(--sj-purple);font-weight:800}
+.sj-app-nav a.active::after{
+  content:"";
+  position:absolute;
+  left:14px;
+  right:14px;
+  bottom:0;
+  height:3px;
+  border-radius:3px 3px 0 0;
+  background:var(--sj-purple);
+}
+.sj-app-account-zone{
+  margin-left:auto;
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  gap:12px;
+  min-width:max-content;
+}
+.sj-app-credits{
+  min-height:32px;
+  display:inline-flex;
+  align-items:center;
+  padding:6px 12px;
+  border-radius:999px;
+  background:var(--sj-soft);
+  color:var(--sj-purple);
+  font-size:12px;
+  font-weight:800;
+  white-space:nowrap;
+}
+.sj-app-account{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  color:var(--sj-ink);
+  font-size:14px;
+  font-weight:750;
+  white-space:nowrap;
+}
+.sj-app-avatar{
+  width:36px;
+  height:36px;
+  border-radius:50%;
+  object-fit:cover;
+  border:1px solid var(--sj-line);
+  background:#eef2ff;
+}
+.sj-app-signout,
+.sj-app-membership{
+  border:0;
+  background:transparent;
+  color:var(--sj-muted);
+  padding:8px 2px;
+  font:inherit;
+  font-size:13px;
+  font-weight:600;
+  text-decoration:none;
+  cursor:pointer;
+  white-space:nowrap;
+}
+.sj-app-signout:hover,.sj-app-membership:hover{color:var(--sj-purple)}
+.sj-header-google{min-width:190px;min-height:40px;display:flex;align-items:center;justify-content:flex-end}
+.sj-secondary-login-hidden{display:none!important}
+body.sj-unified-header #signInGate #googleSignInButton,
+body.sj-unified-header #accessGate #googleSignInButton{display:none!important}
+
+/* The agent page already uses sticky inner navigation. Keep it below this header. */
+body.sj-page-agent .workspace{min-height:calc(100vh - var(--sj-header-height))}
+body.sj-page-agent .sidebar{top:var(--sj-header-height);height:calc(100vh - var(--sj-header-height))}
+body.sj-page-agent .main-column > .tabs{top:var(--sj-header-height)}
+
+@media(max-width:1080px){
+  .sj-app-header-inner{padding:0 16px;gap:16px}
+  .sj-app-nav a{padding:0 10px;font-size:14px}
+  .sj-app-nav a.active::after{left:10px;right:10px}
+  .sj-app-account-name{display:none}
+}
+@media(max-width:760px){
+  :root{--sj-header-height:64px}
+  .sj-app-header-inner{padding:0 10px;gap:10px}
+  .sj-app-brand{font-size:21px}
+  .sj-app-nav{gap:0}
+  .sj-app-nav a{font-size:12.5px;padding:0 8px}
+  .sj-app-nav a.active::after{left:8px;right:8px}
+  .sj-app-credits{display:none}
+  .sj-header-google{min-width:150px;transform:scale(.88);transform-origin:right center}
+  .sj-app-signout{font-size:12px}
+}
