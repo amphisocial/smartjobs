@@ -4,9 +4,6 @@ import dotenv from "dotenv";
 const dotenvResult = dotenv.config({ override: false });
 const fileEnv = dotenvResult.parsed || {};
 
-// PM2 can retain an explicitly empty variable and thereby prevent dotenv from
-// populating the value in process.env. Read the parsed .env file as a fallback
-// for empty PM2 values, and accept common historical aliases.
 function envValue(names, fallback = "") {
   const list = Array.isArray(names) ? names : [names];
   for (const name of list) {
@@ -22,8 +19,6 @@ function envValue(names, fallback = "") {
 
 function secretValue(names, fallback = "") {
   const value = envValue(names, fallback);
-  // PM2 ecosystem files and shell exports sometimes preserve literal wrapping
-  // quotes. Strip only one matching outer quote pair; never log the secret.
   const match = String(value).match(/^(["'])([\s\S]*)\1$/);
   return (match ? match[2] : String(value)).trim();
 }
@@ -64,12 +59,10 @@ export const config = {
   freeDailyLimit: positiveInt("FREE_DAILY_LIMIT", 3),
   liveDailyLimit: positiveInt("LIVE_DAILY_LIMIT", 2),
 
-  // Recruiter free-tier limits. Paid members remain unlimited.
   recruiterFreeJobsDaily: positiveInt("RECRUITER_FREE_JOBS_DAILY", 5),
   recruiterFreeRankRunsDaily: positiveInt("RECRUITER_FREE_RANK_RUNS_DAILY", 5),
   recruiterFreeInterviewsDaily: positiveInt("RECRUITER_FREE_INTERVIEWS_DAILY", 5),
 
-  // Candidate job-search agent limits and workflow controls.
   jobAgentFreeRunsDaily: positiveInt("JOB_AGENT_FREE_RUNS_DAILY", 5),
   jobAgentMaxQueries: positiveInt("JOB_AGENT_MAX_QUERIES", 24),
   jobAgentMaxDiscovered: positiveInt("JOB_AGENT_MAX_DISCOVERED", 100),
@@ -88,7 +81,9 @@ export const config = {
   braveKeySource: envSource(["BRAVE_SEARCH_API_KEY", "BRAVE_API_KEY", "JOB_AGENT_BRAVE_API_KEY"]),
   appBaseUrl: envValue("APP_BASE_URL"),
 
-  // Google Identity Services. No Google client secret is required for ID-token sign-in.
+  membershipTrialDays: positiveInt("MEMBERSHIP_TRIAL_DAYS", 7),
+  referralRewardDays: positiveInt("MEMBERSHIP_REFERRAL_REWARD_DAYS", 7),
+
   googleClientId: envValue("GOOGLE_CLIENT_ID"),
   authSessionSecret: envValue("AUTH_SESSION_SECRET"),
   recruiterSessionDays: positiveInt("RECRUITER_AUTH_SESSION_DAYS", 30),
@@ -112,9 +107,8 @@ export const config = {
   },
 
   databaseUrl: envValue("DATABASE_URL"),
-  // Optional dedicated SmartJobs database. Falls back to DATABASE_URL.
   jobAgentDatabaseUrl: envValue("SMARTJOBS_DATABASE_URL"),
-  pgSsl: (process.env.PGSSL || "false").toLowerCase() === "true",
+  pgSsl: envValue("PGSSL", "false").toLowerCase() === "true",
 
   smtp: {
     host: envValue("SMTP_HOST"),

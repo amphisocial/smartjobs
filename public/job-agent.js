@@ -459,19 +459,7 @@
   $("scheduleFrequency").onchange = fillDayOptions;
   $("scheduleEnabled").onchange = updateScheduleUi;
   async function startAgentCheckout() {
-    const button = $("upgradeSchedule");
-    const original = button.textContent;
-    button.disabled = true;
-    button.textContent = "Opening secure checkout…";
-    try {
-      const data = await api("/api/job-agent/checkout");
-      if (!data.url) throw new Error("Could not start checkout.");
-      location.href = data.url;
-    } catch (error) {
-      button.disabled = false;
-      button.textContent = original;
-      setMessage(error.message || "Could not start checkout.", "error");
-    }
+    location.href = "/membership.html?from=agent";
   }
   $("upgradeSchedule").onclick = startAgentCheckout;
   ["resultAgentFilter", "resultStatusFilter", "recommendedOnly"].forEach(id => $(id).addEventListener("change", renderResults));

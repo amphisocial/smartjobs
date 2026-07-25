@@ -103,11 +103,11 @@
   .iv-replay{margin-top:10px;background:#fff;border:1px solid var(--line);color:var(--ink);padding:7px 13px;border-radius:9px;font-size:12.5px;cursor:pointer;font-weight:600}
   .iv-replay:hover{border-color:var(--accent2)}
 </style>
-  <link rel="stylesheet" href="/smartjobs-header.css?v=2.0.0">
+  <link rel="stylesheet" href="/smartjobs-header.css?v=3.0.0">
   <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
-  <script src="/smartjobs-header.js?v=2.0.0"></script>
+  <script src="/smartjobs-header.js?v=3.0.0"></script>
   <div class="wrap">
     <header>
       <a class="logo" href="/">Role<b>Fit</b></a>
@@ -196,7 +196,7 @@
     <div class="result" id="result"></div>
   </div>
 
-<script src="/app-billing.js"></script>
+<script src="/app-billing.js?v=3.0.0"></script>
 <script>
   const $=(id)=>document.getElementById(id);
   const jd=$("jd"), cv=$("cv"), result=$("result"), err=$("err"), loading=$("loading");
@@ -812,6 +812,6 @@ cv.addEventListener("input", invalidateIfInputsChanged);
     if(pf.tab==="interview" && pf.autostart){ startInterview(); }
   })();
 </script>
-  <script src="/recruiter-auth.js?v=2.0.0"></script>
+  <script src="/recruiter-auth.js?v=3.0.0"></script>
 </body>
 </html>

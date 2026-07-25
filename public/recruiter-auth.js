@@ -60,15 +60,15 @@
     const messages = all("#googleAuthMessage");
     messages.forEach(node => { node.textContent = "Signing in…"; });
     try {
-      const r = await fetch("/api/recruiter/auth/google", {
+      const result = await fetch("/api/recruiter/auth/google", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ credential: response.credential }),
       });
-      const d = await r.json().catch(() => ({}));
-      if (!r.ok) throw new Error(d.error || d.message || "Google sign-in failed.");
-      state.sessionToken = d.sessionToken;
-      state.user = d.user || null;
+      const data = await result.json().catch(() => ({}));
+      if (!result.ok) throw new Error(data.error || data.message || "Google sign-in failed.");
+      state.sessionToken = data.sessionToken;
+      state.user = data.user || null;
       localStorage.setItem(SESSION_KEY, state.sessionToken);
       localStorage.setItem(USER_KEY, JSON.stringify(state.user));
       messages.forEach(node => { node.textContent = ""; });
@@ -91,10 +91,10 @@
 
   async function init() {
     updateUi();
-    const r = await fetch("/api/recruiter/auth/config");
-    state.config = await r.json().catch(() => ({}));
+    const result = await fetch("/api/recruiter/auth/config");
+    state.config = await result.json().catch(() => ({}));
     const messages = all("#googleAuthMessage");
-    if (!r.ok || !state.config.enabled || !state.config.clientId) {
+    if (!result.ok || !state.config.enabled || !state.config.clientId) {
       messages.forEach(node => { node.textContent = "Google authentication is not configured on the server."; });
       return;
     }
@@ -129,19 +129,10 @@
     state.user = null;
     localStorage.removeItem(SESSION_KEY);
     localStorage.removeItem(USER_KEY);
+    localStorage.removeItem("rf_token");
     window.google?.accounts?.id?.disableAutoSelect();
     notify();
-    // Re-render the top-right Google button after the account is cleared.
-    if (state.config?.clientId && window.google?.accounts?.id) {
-      for (const target of signInTargets()) {
-        target.innerHTML = "";
-        const inHeader = !!target.closest("#smartjobsAppHeader");
-        window.google.accounts.id.renderButton(target, {
-          type: "standard", theme: "outline", size: inHeader ? "medium" : "large",
-          shape: "rectangular", text: "signin_with", width: inHeader ? 190 : 260,
-        });
-      }
-    }
+    location.assign("/");
   }
 
   window.RecruiterAuth = {

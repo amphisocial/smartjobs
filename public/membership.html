@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>SmartJobs Membership</title>
+  <meta name="description" content="Start a SmartJobs free trial, review membership details, manage billing, copy your member code, and earn referral rewards." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/smartjobs-header.css?v=3.0.0" />
+  <link rel="stylesheet" href="/membership.css?v=1.0.0" />
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+</head>
+<body>
+  <script src="/smartjobs-header.js?v=3.0.0"></script>
+
+  <main class="membership-shell">
+    <section class="membership-hero">
+      <div>
+        <span class="eyebrow">SmartJobs Complete</span>
+        <h1>One membership. Every job-search and hiring workflow.</h1>
+        <p>Use Job Fit, ATS resume creation, live AI interviews, agentic job search, application tracking, recruiter ranking, and interview coaching under one account.</p>
+      </div>
+      <div class="hero-price">
+        <span id="heroPrice">Loading pricing…</span>
+        <small id="heroTrial">7-day free trial</small>
+      </div>
+    </section>
+
+    <section id="signedOutCard" class="surface signin-surface">
+      <div>
+        <span class="eyebrow">Sign in required</span>
+        <h2>Sign in from the top-right to view or start your membership.</h2>
+        <p>Your Google identity securely connects your Stripe subscription, member code, referral rewards, and feature access.</p>
+      </div>
+      <div id="googleAuthMessage" class="message"></div>
+    </section>
+
+    <div id="membershipWorkspace" class="workspace-grid hidden">
+      <section class="surface plan-card">
+        <div class="section-heading">
+          <div>
+            <span class="eyebrow">Your plan</span>
+            <h2 id="planName">Free plan</h2>
+          </div>
+          <span id="statusPill" class="status-pill free">Free</span>
+        </div>
+        <p id="planSummary" class="lead-copy">Start a 7-day free trial for complete access.</p>
+
+        <div id="freePlanActions" class="plan-actions">
+          <button id="startTrial" class="primary">Start 7-day free trial</button>
+          <p class="fine-print">A payment method is collected securely by Stripe. Cancel before the trial ends to avoid being charged.</p>
+        </div>
+
+        <div id="memberPlanActions" class="hidden">
+          <div class="detail-grid">
+            <div><span>Status</span><strong id="memberStatus">—</strong></div>
+            <div><span id="dateLabel">Next billing date</span><strong id="membershipDate">—</strong></div>
+            <div><span>Current price</span><strong id="membershipPrice">—</strong></div>
+            <div><span>Billing</span><strong id="billingState">—</strong></div>
+          </div>
+          <div class="button-row">
+            <button id="manageBilling" class="secondary">Manage payment method</button>
+            <button id="cancelMembership" class="danger">Cancel membership</button>
+            <button id="resumeMembership" class="secondary hidden">Keep membership</button>
+          </div>
+        </div>
+        <div id="membershipMessage" class="message"></div>
+      </section>
+
+      <section class="surface features-card">
+        <span class="eyebrow">Complete access</span>
+        <h2>Everything included</h2>
+        <div class="feature-list">
+          <div><b>Agentic Job Search</b><span>Verified employer and ATS postings, saved searches, scheduling, and digests.</span></div>
+          <div><b>Job Fit and ATS Resume</b><span>Role-specific scoring, keyword gaps, resume rewriting, and PDF export.</span></div>
+          <div><b>Live AI Interviews</b><span>A speaking interviewer, tailored questions, answer feedback, and stage-specific practice.</span></div>
+          <div><b>Job Tracker</b><span>Application stages, notes, job descriptions, resumes, and interview preparation.</span></div>
+          <div><b>Recruiter Workspace</b><span>Job creation, candidate records, ranking, screening questions, and interview coaching.</span></div>
+          <div><b>Unlimited usage</b><span>No daily AI-run limits while the trial or subscription is active.</span></div>
+        </div>
+      </section>
+
+      <section id="memberCodeCard" class="surface">
+        <div id="ownedCodeBlock" class="hidden">
+          <span class="eyebrow">Use another device</span>
+          <h2>Your member code</h2>
+          <p>Copy this code to unlock your active SmartJobs membership elsewhere. Keep it private.</p>
+          <div class="code-row">
+          <code id="memberCode">—</code>
+            <button id="copyMemberCode" class="secondary">Copy code</button>
+          </div>
+        </div>
+        <div class="redeem-area">
+          <label for="redeemCode">Already have a member code?</label>
+          <div class="input-row"><input id="redeemCode" placeholder="rf_…" autocomplete="off" spellcheck="false" /><button id="redeemMemberCode" class="secondary">Use code</button></div>
+        </div>
+      </section>
+
+      <section class="surface referral-card">
+        <div class="section-heading">
+          <div>
+            <span class="eyebrow">Referral rewards</span>
+            <h2>Invite a friend. Get 7 additional free days.</h2>
+          </div>
+          <span class="reward-pill">+7 days</span>
+        </div>
+        <p>Send an invitation to a valid <strong>@gmail.com</strong> address. When that person signs in with the invited address and starts a SmartJobs trial, seven days are added to your membership. Each invited address can qualify once.</p>
+        <div id="invitationNotice" class="invitation-notice hidden"></div>
+        <div class="input-row">
+          <input id="inviteEmail" type="email" placeholder="friend@gmail.com" autocomplete="email" />
+          <button id="sendInvite" class="primary">Send invitation</button>
+        </div>
+        <div id="referralMessage" class="message"></div>
+        <div id="referralList" class="referral-list"></div>
+      </section>
+    </div>
+  </main>
+
+  <script src="/app-billing.js?v=3.0.0"></script>
+  <script src="/recruiter-auth.js?v=3.0.0"></script>
+  <script src="/membership.js?v=1.0.0"></script>
+</body>
+</html>

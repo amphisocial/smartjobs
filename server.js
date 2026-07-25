@@ -19,6 +19,9 @@ import { recruiterDbReady } from "./lib/recruiter-store.js";
 import { installJobAgentRoutes } from "./lib/job-agent-routes.js";
 import { jobAgentDbReady } from "./lib/job-agent-store.js";
 import { smtpConfigured } from "./lib/smtp-mailer.js";
+import { installMembershipRoutes } from "./lib/membership-routes.js";
+import { membershipStoreReady } from "./lib/membership-store.js";
+import { processMembershipCheckout } from "./lib/membership-service.js";
 
 assertConfig();
 await initStore();
@@ -35,7 +38,7 @@ app.post("/webhook/stripe", express.raw({ type: "application/json" }), async (re
   try {
     const o = event.data.object;
     switch (event.type) {
-      case "checkout.session.completed": await ensureMember(o.customer, o.subscription, "active"); break;
+      case "checkout.session.completed": await processMembershipCheckout(o); break;
       case "customer.subscription.updated": await setStatusByCustomer(o.customer, o.status); break;
       case "customer.subscription.deleted": await setStatusByCustomer(o.customer, "canceled"); break;
       case "invoice.payment_failed": await setStatusByCustomer(o.customer, "past_due"); break;
@@ -48,7 +51,8 @@ app.use(express.json({ limit: "12mb" }));
 app.use((req, res, next) => { if (req.path === "/" || req.path.endsWith(".html")) res.set("Cache-Control", "no-cache, no-store, must-revalidate"); next(); });
 app.use(express.static(path.join(__dirname, "public")));
 
-// Persistent recruiter and candidate job-agent workspaces.
+// Persistent membership, recruiter and candidate job-agent workspaces.
+await installMembershipRoutes(app);
 await installRecruiterRoutes(app);
 await installJobAgentRoutes(app);
 
@@ -62,6 +66,7 @@ app.get("/healthz", (_req, res) => res.json({
   jobAgentDatabaseReady: jobAgentDbReady(),
   jobAgentSchedulerEnabled: config.jobAgentSchedulerEnabled,
   smtpConfigured: smtpConfigured(),
+  membershipDatabaseReady: membershipStoreReady(),
   googleAuthConfigured: googleAuthEnabled(),
   recruiterLimits: {
     jobs: config.recruiterFreeJobsDaily,
@@ -131,7 +136,7 @@ app.get("/api/claim", async (req, res) => {
   try {
     const paid = await resolvePaidSession(String(req.query.session_id || ""));
     if (!paid) return res.status(402).json({ error: "Payment not completed." });
-    res.json({ token: await ensureMember(paid.customerId, paid.subscriptionId, "active") });
+    res.json({ token: await ensureMember(paid.customerId, paid.subscriptionId, paid.status || "active") });
   } catch (e) { console.error("[claim]", e.message); res.status(500).json({ error: "Could not verify subscription." }); }
 });
 app.post("/api/member", async (req, res) => {
